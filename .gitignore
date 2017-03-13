@@ -2,3 +2,5 @@
 *.sym
 bootsect
 env.sh
+bootimg
+demo
