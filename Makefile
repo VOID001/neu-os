@@ -2,6 +2,7 @@ AS=i686-elf-as
 LD=i686-elf-ld
 OBJCOPY=i686-elf-objcopy
 QEMU=qemu-system-i386
+BOCHS=bochs
 
 LDFLAGS	+= -Ttext 0
 
@@ -15,22 +16,32 @@ bootsect: bootsect.s
 	@cp -f bootsect bootsect.sym
 	@$(OBJCOPY) -R .pdr -R .comment -R.note -S -O binary bootsect
 
-demo: demo.s
-	@$(AS) -n -g -o demo.o demo.s
-	@$(LD) $(LDFLAGS) -o demo demo.o
-	@cp -f demo demo.sym
-	@$(OBJCOPY) -R .pdr -R .comment -R.note -S -O binary demo
+setup: setup.s
+	@$(AS) -n -g -o setup.o setup.s
+	@$(LD) $(LDFLAGS) -o setup setup.o
+	@cp -f setup setup.sym
+	@$(OBJCOPY) -R .pdr -R .comment -R.note -S -O binary setup
 
-bootimg: demo bootsect
+binary: binary.s
+	@$(AS) -n -g -o binary.o binary.s
+	@$(LD) $(LDFLAGS) -o binary binary.o
+	@cp -f binary binary.sym
+	@$(OBJCOPY) -R .pdr -R .comment -R.note -S -O binary binary
+
+bootimg: setup bootsect binary
 	@dd if=bootsect of=bootimg bs=512 count=1
-	@dd if=demo of=bootimg bs=512 count=4 seek=1
+	@dd if=setup of=bootimg bs=512 count=4 seek=1
+	@dd if=binary of=bootimg bs=512 seek=5
 	@echo "Build bootimg done"
 
 run: bootimg
 	$(QEMU) -boot a -fda bootimg
 
+run_bochs: bootimg
+	$(BOCHS) -q
+
 run_debug:
 	$(QEMU) -boot a -fda bootimg -S -s
 
 clean:
-	@rm -f bootsect bootsect.o bootsect.sym	demo demo.sym bootimg a.out
+	@rm -f bootsect *.o setup *.sym bootimg a.out
