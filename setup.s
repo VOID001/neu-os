@@ -1,6 +1,6 @@
 ###########################################################
 #														  #
-#		Lesson 3 设置GDT 切换到保护模式					  #
+#		Lesson 4 设置IDT 对8259A进行编程    			  #
 #													      #
 ###########################################################
 
@@ -177,6 +177,7 @@ do_move:
 end_move:
 	mov $SETUPSEG, %ax
 	mov %ax, %ds
+	lidt idt_48
 	lgdt gdt_48	
 
 
@@ -184,6 +185,35 @@ end_move:
 	inb $0x92, %al
 	orb $0b00000010, %al
 	outb %al, $0x92
+
+# 这里我们会对8259A进行编程,很脏的活，不建议大家搞OwO(所以注释都是英文的辣)
+	mov $0x11, %al			# Init ICW1, 0x11 is init command
+
+	out %al, $0x20			# 0x20 is 8259A-1 Port
+	.word 0x00eb, 0x00eb	# Time Delay jmp $+2, jmp $+2
+	out %al, $0xA0			# And init 8259A-2
+	.word 0x00eb, 0x00eb
+	mov $0x20, %al			# Send Hardware start intterupt number(0x20)
+	out %al, $0x21			# From 0x20 - 0x27
+	.word 0x00eb, 0x00eb
+	mov $0x28, %al
+	out %al, $0xA1			# From 0x28 - 0x2F
+	.word 0x00eb, 0x00eb
+	mov $0x04, %al			# 8259A-1 Set to Master
+	out %al, $0x21
+	.word 0x00eb, 0x00eb
+	mov $0x02, %al			# 8259A-2 Set to Slave
+	out %al, $0xA1
+	.word 0x00eb, 0x00eb
+	mov $0x01, %al			# 8086 Mode
+	out %al, $0x21
+	.word 0x00eb, 0x00eb
+	out %al, $0xA1
+	.word 0x00eb, 0x00eb
+	mov $0xFF, %al
+	out %al, $0x21			# Mask all the interrupts now
+	.word 0x00eb, 0x00eb
+	out %al, $0xA1			
 
 
 # 开启保护模式！
@@ -204,6 +234,10 @@ end_move:
 gdt_48:					# This is the GDT Descriptor
 	.word 0x800			# 
 	.word 512+gdt, 0x9	# This give the GDT Base address 0x90200
+
+idt_48:
+	.word 0
+	.word 0, 0
 
 gdt:
 	.word	0,0,0,0

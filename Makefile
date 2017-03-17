@@ -44,4 +44,4 @@ run_debug:
 	$(QEMU) -boot a -fda bootimg -S -s
 
 clean:
-	@rm -f bootsect *.o setup *.sym bootimg a.out
+	@rm -f bootsect *.o setup *.sym bootimg a.out binary
