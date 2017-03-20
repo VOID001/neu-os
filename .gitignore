@@ -1,7 +1,8 @@
 *.o
 *.sym
-bootsect
+boot/bootsect
 env.sh
-bootimg
-demo
+boot/bootimg
+boot/setup
+boot/binary
 .workdoc/

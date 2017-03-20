@@ -10,6 +10,9 @@ LDFLAGS	+= -Ttext 0
 
 all: bootimg
 
+# Bootsector is RAW Binary
+# So is setup program
+
 bootsect: bootsect.s
 	@$(AS) -n -g -o bootsect.o bootsect.s
 	@$(LD) $(LDFLAGS) -o bootsect bootsect.o
