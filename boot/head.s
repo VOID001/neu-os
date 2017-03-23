@@ -102,7 +102,8 @@ after_page_tables:
 	push $0
 	push $0
 	pushl $L6
-	pushl $_main
+	pushl $main
+	jmp setup_paging
 L6:
 	jmp L6
 
@@ -125,7 +126,7 @@ ignore_int:
 	mov %ax, %es
 	mov %ax, %fs
 	pushl $int_msg
-	call _printk
+	call printk
 	
 	popl %eax
 	pop %fs
@@ -179,9 +180,14 @@ idt_descr:
 .align 2
 .word 0
 
+
+
 gdt_descr:
 	.word 256*8 - 1
 	.long gdt
+	.align 8
+
+idt:  .fill 256, 8, 0		# Forget to set IDT at first QAQ
 
 gdt:
 	# Empty Entry (FIRST ENTRY)

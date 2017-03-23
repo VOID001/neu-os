@@ -6,3 +6,4 @@ boot/bootimg
 boot/setup
 boot/binary
 .workdoc/
+*.ini

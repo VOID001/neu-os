@@ -1,0 +1,7 @@
+AS=i686-elf-as
+CC=gcc -m32 -march=i686 -nostdlib
+LD=i686-elf-ld
+OBJCOPY=i686-elf-objcopy
+QEMU=qemu-system-i386
+BOCHS=bochs
+STRIP=i686-elf-strip
