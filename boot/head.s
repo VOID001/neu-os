@@ -108,7 +108,7 @@ L6:
 	jmp L6
 
 int_msg:					# Message to display when interrupt happen
-	.asciz "Unknown interrupt\n\r"
+	.asciz "Unknown interrupt\n"
 
 .align 2					# Align to 4Bytes
 
@@ -127,6 +127,15 @@ ignore_int:
 	mov %ax, %fs
 	pushl $int_msg
 	call printk
+	
+	// This is used to tell 8259A keyboard interrupts handling done
+	// Temporary use, will remove later
+//	mov $0x20, %al
+//	out %al, $0x20
+//	// End 
+//	jmp 1f
+//1:  jmp 1f
+//1:  out %al, $0xA0
 	
 	popl %eax
 	pop %fs

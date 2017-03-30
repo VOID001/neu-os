@@ -8,12 +8,14 @@ include Makefile.header
 
 LDFLAGS	+= -Ttext 0 -e startup_32 -nostdlib
 
-.PHONY=clean run all
+.PHONY=clean run all boot/head.o boot/bootsect boot/setup kernel/kernel.o
 
 all: bootimg
 
-system: boot/head.o kernel/kernel.o
-	@$(LD) $(LDFLAGS) boot/head.o kernel/kernel.o -o system.sym
+OBJS = boot/head.o kernel/kernel.o mm/mm.o
+
+system: $(OBJS)
+	@$(LD) $(LDFLAGS) $(OBJS) -o system.sym
 	@$(STRIP) system.sym -o system.o
 	@$(OBJCOPY) -O binary -R .note -R .comment system.o system
 
@@ -28,6 +30,9 @@ boot/bootsect:
 
 boot/setup:
 	@make setup -C boot
+
+mm/mm.o:
+	@make -C mm
 
 # Squash the bootimg together
 bootimg: boot/setup boot/bootsect system
@@ -49,3 +54,4 @@ clean:
 	@rm -f bootsect *.o setup *.sym bootimg a.out binary head  system
 	@make clean -C boot
 	@make clean -C kernel
+	@make clean -C mm

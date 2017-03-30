@@ -13,6 +13,7 @@ void memcpy(char *dest, char *src, int count, int size);
 void printnum(int num, int base, int sign);
 int get_cursor();
 void update_cursor(int row, int col);
+void panic(const char *str);
 
 int video_x, video_y;
 
