@@ -7,3 +7,6 @@ boot/setup
 boot/binary
 .workdoc/
 *.ini
+tags
+bootimg
+system
