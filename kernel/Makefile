@@ -6,7 +6,7 @@ QEMU=qemu-system-i386
 BOCHS=bochs
 STRIP=i686-elf-strip
 
-OBJS = printk.o main.o panic.o
+OBJS = printk.o panic.o
 
 LDFLAGS	+= -r
 CFLAGS += -I../include

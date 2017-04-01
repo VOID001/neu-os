@@ -12,7 +12,7 @@ LDFLAGS	+= -Ttext 0 -e startup_32 -nostdlib
 
 all: bootimg
 
-OBJS = boot/head.o kernel/kernel.o mm/mm.o
+OBJS = boot/head.o init/main.o kernel/kernel.o mm/mm.o
 
 system: $(OBJS)
 	@$(LD) $(LDFLAGS) $(OBJS) -o system.sym
@@ -30,6 +30,9 @@ boot/bootsect:
 
 boot/setup:
 	@make setup -C boot
+
+init/main.o:
+	@make main.o -C init
 
 mm/mm.o:
 	@make -C mm
@@ -55,3 +58,4 @@ clean:
 	@make clean -C boot
 	@make clean -C kernel
 	@make clean -C mm
+	@make clean -C init
