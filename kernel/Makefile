@@ -1,10 +1,4 @@
-CC=i686-elf-gcc
-AS=i686-elf-as
-LD=i686-elf-ld
-OBJCOPY=i686-elf-objcopy
-QEMU=qemu-system-i386
-BOCHS=bochs
-STRIP=i686-elf-strip
+include ../Makefile.header
 
 OBJS = printk.o panic.o traps.o asm.o
 

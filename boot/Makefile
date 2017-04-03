@@ -1,11 +1,5 @@
 include ../Makefile.header
 
-#AS=i686-elf-as
-#LD=i686-elf-ld
-#OBJCOPY=i686-elf-objcopy
-#QEMU=qemu-system-i386
-#BOCHS=bochs
-
 LDFLAGS	+= -Ttext 0
 
 .PHONY=clean run all
