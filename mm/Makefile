@@ -14,7 +14,7 @@ LDFLAGS	+= -r
 	@$(CC) $(CFLAGS) \
 		-S -o $*.s $<
 
-OBJS  = memory.o mm_test.o
+OBJS  = memory.o mm_test.o page.o
 
 all: mm.o
 

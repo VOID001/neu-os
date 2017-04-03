@@ -251,6 +251,7 @@ void do_no_page(unsigned long error_code, unsigned long address) {
     unsigned long tmp;
     unsigned long page;
 
+    printk("Page Fault at [%x]\n", address);
     address &= 0xfffff000;
     if(!(page = get_free_page()))
         oom();
