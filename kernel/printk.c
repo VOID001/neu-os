@@ -13,7 +13,10 @@
 #define VIDEO_MEM 0xB8000
 #define VIDEO_X_SZ 80
 #define VIDEO_Y_SZ 25
+#define TAB_LEN 8
 #define CALC_MEM(x, y) (2*((x) + 80*(y)))
+
+int video_x, video_y;
 
 long user_stack[PAGE_SIZE>>2];
 
@@ -161,6 +164,9 @@ void video_putchar(char ch) {
     if(ch == '\n') {
         video_x = 0;
         video_y++;
+    }
+    else if(ch == '\t') {
+        while(video_x % TAB_LEN) video_x++;
     }
     else {
         video_putchar_at(ch, video_x, video_y, 0x0F);
