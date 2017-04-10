@@ -1,6 +1,7 @@
 include ../Makefile.header
 
 LDFLAGS	+= -r
+CFLAGS += -I../include
 
 .PHONY=clean run all
 
