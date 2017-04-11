@@ -106,7 +106,7 @@ void free_page(unsigned long addr) {
     if(addr >= HIGH_MEMORY) return ; // 也不能超过可用内存高端
 
     addr = MAP_NR(addr);        // 计算出需要的页号
-    if(mem_map[addr]--) return;     // 如果该页为被使用状态(mem_map[addr] == 1)那么清零并返回
+    if(mem_map[addr]--) return;     // 如果该页为被使用状态那么减少引用计数并返回
     mem_map[addr] = 0;
     panic("Tring to free free page!");  // 不应该出现这种情况 因而引发panic
 }
@@ -259,4 +259,88 @@ void do_no_page(unsigned long error_code, unsigned long address) {
         return ;
     free_page(page);
     oom();
+}
+
+// 下面的两个函数是多进程需要使用到的，copy_page_tables 和其姊妹函数
+// free_page_tables
+
+// copy_page_table 用来拷贝线性地址连续一页的空间到另一个线性地址，
+// 做法为仅仅拷贝其页表项内容，不拷贝其物理内存内容
+// 同时当from = 0时表示从内核拷贝，这时我们不需要拷贝 4MB ,仅仅拷贝 640 KB
+int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
+    unsigned long *from_page_table;
+    unsigned long *to_page_table;
+    unsigned long this_page;
+    unsigned long *from_dir, *to_dir;
+    unsigned long nr;
+
+    // 检查内存边界，必须是4MB的整数倍，否则 panic 
+    if((from & 0x3fffff) || (to & 0x3fffff)) {
+        panic("copy_page_tables called with wrong alignment");
+    }
+    // 获取线性地址对应的页目录项
+    from_dir = 0 + (unsigned long *)((from >> 20) & 0xffc);
+    to_dir = 0 + (unsigned long *)((to >> 20) & 0xffc);
+    size = ((unsigned) (size + 0x3fffff)) >> 22;
+
+    for(; size-->0; from_dir++, to_dir++) {
+        if(1 & *to_dir)
+            panic("copy_page_tables: already exists");
+        // from_dir 不存在，就跳过这页页表的复制
+        if(!(1 & *from_dir))
+            continue;
+        if(!(to_page_table = (unsigned long) get_free_page()))
+            return -1;
+        *to_dir = ((unsigned long)to_page_table | 7);
+        // 判断是不是复制内核页，如果是则只copy 640KB(0xA0=160个页面)
+        nr = (from == 0)?0xA0:1024;
+        for(; nr-->0; from_page_table++, to_page_table++) {
+            this_page = *from_page_table;
+            if(!(1 & this_page))
+                continue;
+            // 这里将复制的页设置为只读
+            this_page &= ~2;
+            *to_page_table = this_page;
+            // 如果复制的页面地址为高于LOW_MEM，说明不是从内核空间复制
+            // 同时把原页面也设置为只读，这样二者共享了物理页面，如果向任何一个页面写入都会
+            // 引发页保护异常（Page Fault），触发写时复制(Copy On Write COW)
+            if(this_page > LOW_MEM) {
+                *from_page_table = this_page;
+                mem_map[MAP_NR(this_page)]++;
+            }
+        }
+    }
+    invalidate();
+    return 0;
+}
+
+// 释放连续的4MB内存块，内存块要4MB对齐, 此函数用于供给 exit() 使用
+int free_page_tables(unsigned long from, unsigned long to, unsigned long size){
+    unsigned long *pg_table;
+    unsigned long *pg_dir, nr;
+
+    // 同 copy_page_tables 一样做边界检查
+    if(from & 0x3fffff)
+        panic("free_page_tables: wrong alignment");
+    if(!from)
+        panic("free_page_tables: trying to free kernel/swapper memory");
+
+    size = (size + 0x3fffff) >> 22;
+    pg_dir = (unsigned long *)((from >> 20) & 0xffc);
+    for(; size-->0; pg_dir++) {
+       if(!(1 & *pg_dir))
+           continue;
+       pg_table = (unsigned long *)(0xfffff000 & *pg_dir);
+       // 释放页表里的每一项
+       for(nr = 0; nr < 1024; nr++) {
+           if(1 & *pg_table)
+               free_page(0xfffff000 & *pg_table);
+           *pg_table = 0;
+           pg_table++;
+       }
+       free_page(0xfffff000 & *pg_dir);
+       *pg_dir = 0;
+    }
+    invalidate();
+    return 0;
 }
