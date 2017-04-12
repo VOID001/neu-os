@@ -313,34 +313,3 @@ int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
     invalidate();
     return 0;
 }
-
-// 释放连续的4MB内存块，内存块要4MB对齐, 此函数用于供给 exit() 使用
-int free_page_tables(unsigned long from, unsigned long to, unsigned long size){
-    unsigned long *pg_table;
-    unsigned long *pg_dir, nr;
-
-    // 同 copy_page_tables 一样做边界检查
-    if(from & 0x3fffff)
-        panic("free_page_tables: wrong alignment");
-    if(!from)
-        panic("free_page_tables: trying to free kernel/swapper memory");
-
-    size = (size + 0x3fffff) >> 22;
-    pg_dir = (unsigned long *)((from >> 20) & 0xffc);
-    for(; size-->0; pg_dir++) {
-       if(!(1 & *pg_dir))
-           continue;
-       pg_table = (unsigned long *)(0xfffff000 & *pg_dir);
-       // 释放页表里的每一项
-       for(nr = 0; nr < 1024; nr++) {
-           if(1 & *pg_table)
-               free_page(0xfffff000 & *pg_table);
-           *pg_table = 0;
-           pg_table++;
-       }
-       free_page(0xfffff000 & *pg_dir);
-       *pg_dir = 0;
-    }
-    invalidate();
-    return 0;
-}
