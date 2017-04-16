@@ -8,6 +8,6 @@ struct sigaction {
     sigset_t sa_mask;
     int sa_flags;
     void (*sa_restorer)(void);
-}
+};
 
 #endif

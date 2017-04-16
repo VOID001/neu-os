@@ -1,6 +1,6 @@
 include ../Makefile.header
 
-OBJS = printk.o panic.o traps.o asm.o
+OBJS = printk.o panic.o traps.o asm.o sched.o
 
 LDFLAGS	+= -r
 CFLAGS += -I../include

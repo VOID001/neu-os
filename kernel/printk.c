@@ -21,12 +21,6 @@ int video_x, video_y;
 
 long user_stack[PAGE_SIZE>>2];
 
-struct {
-    long *a;
-    short b;
-} stack_start = { &user_stack[PAGE_SIZE>>2], 0x10 };
-
-
 struct video_info {
     unsigned int retval;        // Return value
     unsigned int colormode;     // Color bits
