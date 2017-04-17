@@ -17,6 +17,7 @@
 .global general_protection, coprocessor_error, irq13, reserved
 # 这两个是STUB的,之后会在system_call.s中实现
 .global corprocessor_error, parallel_interrupt, device_not_available
+.global demo_timer_interrupt
 
 # 先处理无 error code 压栈的情况
 # 相关中断有: 除零(Fault) 调试debug(Fault) nmi(Trap) 断点指令(Trap)
@@ -186,6 +187,10 @@ parallel_interrupt:
 device_not_available:
 	pushl $do_stub
 	jmp error_code
+
+demo_timer_interrupt:
+	pushl $do_timer
+	jmp no_error_code
 
 # int7 设备不存在 将在 kernel/system_call.s 中实现
 # int14 页错误 将在 mm/page.s 中实现

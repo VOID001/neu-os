@@ -39,7 +39,7 @@ static void die(char *str, long esp_ptr, long nr) {
     long *esp = (long *)esp_ptr;
     printk("%s: %x", str, nr & 0xffff);
     printk("EIP: %x:%x\n EFLAGS: %x\n ESP %x:%x\n",
-            esp[0], esp[1], esp[2], esp[4], esp[3]);
+            esp[1], esp[0], esp[2], esp[4], esp[3]);
     // Some Process Related code, now stub
     
     printk("No Process now, System HALT!   :(\n");
