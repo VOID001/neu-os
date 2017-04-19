@@ -188,10 +188,6 @@ device_not_available:
 	pushl $do_stub
 	jmp error_code
 
-demo_timer_interrupt:
-	pushl $do_timer
-	jmp no_error_code
-
 # int7 设备不存在 将在 kernel/system_call.s 中实现
 # int14 页错误 将在 mm/page.s 中实现
 # int16 协处理器错误 将在 kernel/system_call.s 中实现

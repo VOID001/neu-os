@@ -47,17 +47,16 @@ int sys_pause(void) {
 int counter = 0;
 long volatile jiffies = 0;
 void do_timer(long cpl) {
-    jiffies++;
+    //jiffies++;
     counter++;
     if(counter == 10){
-        printk("Jiffies = %d\n", jiffies);
+        printk("CPL = %d Jiffies = %d\n", cpl, jiffies);
         counter = 0;
     }
-    outb(0x20, 0x20);
-    // clear the interrupt
 }
 
 void demo_timer_interrupt(void);
+void timer_interrupt(void);
 
 // 这是一个临时函数，用于初始化8253计时器
 // 并开启时钟中断
@@ -68,7 +67,7 @@ void timer_init() {
     outb_p(0x40, divisor >> 8);
 
     // timer interrupt gate setup: INT 0x20
-    set_intr_gate(0x20, &demo_timer_interrupt);
+    set_intr_gate(0x20, &timer_interrupt);
     // Make 8259 accept timer interrupt
     outb(0x21, inb_p(0x21) & ~0x01);
 }
