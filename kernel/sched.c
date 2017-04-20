@@ -60,7 +60,7 @@ void timer_interrupt(void);
 
 // 这是一个临时函数，用于初始化8253计时器
 // 并开启时钟中断
-void timer_init() {
+void sched_init() {
     int divisor = 1193180/HZ;
     outb_p(0x43, 0x36);
     outb_p(0x40, divisor & 0xFF);
