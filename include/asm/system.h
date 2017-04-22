@@ -35,3 +35,31 @@
 
 #define set_system_gate(n, funaddr) \
     _set_gate(&idt[n], 0xF, 3, funaddr)
+
+
+#define _set_seg_desc(gate_addr,type,dpl,base,limit) {\
+    *(gate_addr) = ((base) & 0xff000000) | \
+    (((base) & 0x00ff0000)>>16) | \
+    ((limit) & 0xf0000) | \
+    ((dpl)<<13) | \
+    (0x00408000) | \
+    ((type)<<8); \
+    *((gate_addr)+1) = (((base) & 0x0000ffff)<<16) | \
+    ((limit) & 0x0ffff); }
+
+#define _set_tssldt_desc(n,addr,type) \
+    __asm__ volatile ("movw $104,%1\n\t" \
+            "movw %%ax,%2\n\t" \
+            "rorl $16,%%eax\n\t" \
+            "movb %%al,%3\n\t" \
+            "movb $" type ",%4\n\t" \
+            "movb $0x00,%5\n\t" \
+            "movb %%ah,%6\n\t" \
+            "rorl $16,%%eax" \
+            :"a" (addr), "=m" (*(n)), "=m" (*(n+2)), "=m" (*(n+4)), \
+            "=m" (*(n+5)), "=m" (*(n+6)), "=m" (*(n+7)) \
+            )
+
+#define set_tss_desc(n, addr) _set_tssldt_desc(((char *) (n)), ((int) (addr)), "0x89")
+#define set_ldt_desc(n, addr) _set_tssldt_desc(((char *) (n)), ((int) (addr)), "0x82")
+

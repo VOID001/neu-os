@@ -159,8 +159,8 @@ extern void wake_up(struct task_struct **p);
 // _TSS(n)表示第n个TSS，计算方式为，第一个 TSS 的入口为 4 << 3(因为每一个Entry占8Byte, 所以第4个的偏移量为4 << 3)
 #define _TSS(n) ((((unsigned long) n) << 4) + (FIRST_TSS_ENTRY << 3))
 #define _LDT(n) ((((unsigned long) n) << 4) + (FIRST_LDT_ENTRY << 3))
-#define ltr(n) __asm__ volatile("ltr %%ax"::"a", (_TSS(n)))
-#define lldt(n) __asm__ volatile("lldt %%ax"::"a", (_LDT(n)))
+#define ltr(n) __asm__ volatile("ltr %%ax"::"a" (_TSS(n)))
+#define lldt(n) __asm__ volatile("lldt %%ax"::"a" (_LDT(n)))
 // 取出当前的任务号，返回为n: 当前任务号（和进程号不一样)
 #define str(n) \
     __asm__ volatile("str %%ax\n\t" \
@@ -173,7 +173,7 @@ extern void wake_up(struct task_struct **p);
 // #define PAGE_ALIGN(n) (((n) + 0xfff) & 0xfffff000) 这一行虽然在原有的linux0.11中，不过在整个repo中都没有使用到
 
 #define switch_to(n) {\
-    struct long{a, b;} __tmp; \
+    struct {long a, b;} __tmp; \
     __asm__("cmpl %%ecx, current\n\t" \
             "je 1f\n\t" \
             "movw %%dx, %1\n\t" \

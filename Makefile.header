@@ -1,7 +1,8 @@
 AS=as --32
-CC=gcc -m32 -march=i686 -nostdlib
+CC=gcc
 LD=ld -m elf_i386
 OBJCOPY=objcopy
 QEMU=qemu-system-i386
 BOCHS=bochs
 STRIP=strip
+CFLAGS=-g -m32 -fno-builtin -fno-stack-protector -fomit-frame-pointer -fstrength-reduce
