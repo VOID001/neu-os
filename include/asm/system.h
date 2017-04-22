@@ -56,8 +56,8 @@
             "movb $0x00,%5\n\t" \
             "movb %%ah,%6\n\t" \
             "rorl $16,%%eax" \
-            :"a" (addr), "=m" (*(n)), "=m" (*(n+2)), "=m" (*(n+4)), \
-            "=m" (*(n+5)), "=m" (*(n+6)), "=m" (*(n+7)) \
+            ::"a" (addr), "m" (*(n)), "m" (*(n+2)), "m" (*(n+4)), \
+            "m" (*(n+5)), "m" (*(n+6)), "m" (*(n+7)) \
             )
 
 #define set_tss_desc(n, addr) _set_tssldt_desc(((char *) (n)), ((int) (addr)), "0x89")
