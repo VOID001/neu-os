@@ -5,6 +5,7 @@
 #include <asm/io.h>
 
 extern int timer_interrupt(void);
+extern int system_call(void);
 
 union task_union {
     struct task_struct task;
@@ -168,5 +169,6 @@ void sched_init() {
     // Make 8259 accept timer interrupt
     outb(0x21, inb_p(0x21) & ~0x01);
 
-    //暂时还不支持system_call
+    // 初始化 system_call
+    set_system_gate(0x80, &system_call)
 }
