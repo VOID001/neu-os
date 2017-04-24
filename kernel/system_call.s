@@ -40,7 +40,7 @@ system_call:
 	cmp $nr_system_calls - 1, %eax
 	ja bad_sys_call
 	push %ds
-	push $es
+	push %es
 	push %fs
 	push %edx
 	push %ecx
@@ -52,7 +52,7 @@ system_call:
 	mov %dx, %fs
 	call *sys_call_table(, %eax, 4)
 	pushl %eax
-	movl current %eax		# 这里对task_struct进行判断，如果current->state != TASK_RUNNING, 则需要进行重新调度
+	movl current,%eax		# 这里对task_struct进行判断，如果current->state != TASK_RUNNING, 则需要进行重新调度
 	cmp $0, state(%eax)
 	jne reschedule
 	cmp $0, counter(%eax)	# 如果时间片用光，也需要重新调度

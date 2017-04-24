@@ -6,7 +6,10 @@
 
 // 以下是一些在 head.s 里已经规划好的参数,在这里以宏的形式再次给出
 
-#define LOW_MEM 0x100000 // 0x00000000 - 0x00100000 为物理内存低 1MB 空间, 是系统代码所在
+#include <linux/kernel.h>
+#include <linux/head.h>
+
+#define LOW_MEM 0x100000ul // 0x00000000 - 0x00100000 为物理内存低 1MB 空间, 是系统代码所在
 #define PAGING_MEMORY (15*1024*1024) // 剩余 15MB 空闲物理内存用于分页
 #define PAGING_PAGES (PAGING_MEMORY >> 12) // 分页后的页数
 #define MAP_NR(addr) (((addr) - LOW_MEM) >> 12) // 计算当前物理地址的对应页号
@@ -20,7 +23,7 @@
 #define invalidate() \
     __asm__ volatile("mov %%eax, %%cr3"::"a" (0))
 
-static long HIGH_MEMORY = 0;
+static unsigned long HIGH_MEMORY = 0;
 void un_wp_page(unsigned long * table_entry);
 
 // 最基本的, linux0.11 使用内存字节位图来管理物理页的状态, 声明时全部填零
@@ -37,14 +40,14 @@ static inline void oom() {
 // >>12 = /4KB(一页的大小)
 //
 void mem_init(unsigned long start_mem, unsigned long end_mem) {
-    int i;
+    unsigned long i;
     HIGH_MEMORY = end_mem;      // 物理内存最高处为 end_mem
     for(i = 0; i < PAGING_PAGES; i++)
         mem_map[i] = USED;      // 除了start_mem ~ end_mem 的区域物理页都应该为被占用状态
 
-    i = MAP_NR(start_mem);
+    i = (unsigned long)MAP_NR(start_mem);
     end_mem -= start_mem;
-    end_mem >> 12;              // 计算多少页需要设置为free
+    end_mem >>= 12;              // 计算多少页需要设置为free
     while(end_mem-->0) {
         mem_map[i++] = 0;
     }
@@ -54,7 +57,7 @@ void mem_init(unsigned long start_mem, unsigned long end_mem) {
 // 仅仅用来显示当前 memory 用量的一个小函数
 void calc_mem(void) {
     int i, j, k, free = 0;
-    long *pg_tbl, *pg_dir;
+    long *pg_tbl;
 
     for(i = 0; i < PAGING_PAGES; i++)
         if(!mem_map[i]) free++;
@@ -153,18 +156,18 @@ int free_page_tables(unsigned long from, unsigned long size) {
 unsigned long put_page(unsigned long page, unsigned long address) {
     unsigned long *pg_tbl, tmp;
     
-    if(page < LOW_MEM || page >= HIGH_MEMORY)
+    if(page < LOW_MEM || page >= (unsigned long)HIGH_MEMORY)
         printk("Trying to put page %x at %x\n", page, address);
     // mem_map 中此页为unset状态
     if(mem_map[MAP_NR(page)] != 1)
         printk("mem_map disagrees with %x at %x\n", page, address);
     // 计算该线性地址对应的页目录地址
-    pg_tbl = (unsigned long) ((address >> 20) & 0xffc);
+    pg_tbl = (unsigned long *) ((address >> 20) & 0xffc);
     // 如果页目录存在则直接取出 pg_tbl
     printk("Params: pg_tbl = %x, entry = %x\n", pg_tbl, (address >> 12) & 0x3ff);
     if(*pg_tbl & 1) {
         printk("Page table now available\n");
-        pg_tbl = (unsigned long) (*pg_tbl & 0xfffff000);
+        pg_tbl = (unsigned long *) (*pg_tbl & 0xfffff000);
     }
     // 否则申请物理页放置页目录
     else {
@@ -205,7 +208,7 @@ void write_verify(unsigned long address) {
     // 取页表首地址
     page = page & 0xfffff000;
     page += ((address >> 10) & 0xffc);
-    if(*(unsigned long *)page & 3 == 1) { // 页表P = 1, R/W = 0
+    if((*(unsigned long *)page & 3) == 1) { // 页表P = 1, R/W = 0
         un_wp_page((unsigned long *)page);
     }
     return ;
@@ -226,7 +229,7 @@ void un_wp_page(unsigned long * table_entry) {
         return ;
     }
     // 无法分配新的页面
-    if(!(new_page = get_free_page))
+    if(!(new_page = (unsigned long)get_free_page))
         oom();
     // 页面被共享, 因为要进行 COW 之后该页面就是独立的了,所以引用计数 -1
     if(old_page >= LOW_MEM)
@@ -238,8 +241,9 @@ void un_wp_page(unsigned long * table_entry) {
 
 // 缺页异常会调用此函数
 void do_wp_page(unsigned long error_code, unsigned long address) {
-    un_wp_page((unsigned long *) (((address >> 10) & 0xffc) +
-                ((*(unsigned long *)((address >> 20) & 0xffc))) & 0xfffff000));
+    error_code = error_code; // 纯粹为了消除警告
+    un_wp_page((unsigned long *) ((((address >> 10) & 0xffc) +
+                ((*(unsigned long *)((address >> 20) & 0xffc)))) & 0xfffff000));
 }
 
 // 缺页异常会调用此函数
@@ -248,10 +252,10 @@ void do_wp_page(unsigned long error_code, unsigned long address) {
 // 则尝试共享页面,如果还失败,则尝试取一个新的页面(不在内存中的),再失败则报错OOM
 // 参数 error_code, 错误号; address 线性地址
 void do_no_page(unsigned long error_code, unsigned long address) {
-    unsigned long tmp;
+    //unsigned long tmp;
     unsigned long page;
 
-    printk("Page Fault at [%x]\n", address);
+    printk("Page Fault at [%x], errono %d\n", address, error_code);
     address &= 0xfffff000;
     if(!(page = get_free_page()))
         oom();
@@ -289,7 +293,7 @@ int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
         // from_dir 不存在，就跳过这页页表的复制
         if(!(1 & *from_dir))
             continue;
-        if(!(to_page_table = (unsigned long) get_free_page()))
+        if(!(to_page_table = (unsigned long *) get_free_page()))
             return -1;
         *to_dir = ((unsigned long)to_page_table | 7);
         // 判断是不是复制内核页，如果是则只copy 640KB(0xA0=160个页面)
@@ -299,7 +303,7 @@ int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
             if(!(1 & this_page))
                 continue;
             // 这里将复制的页设置为只读
-            this_page &= ~2;
+            this_page &= (unsigned long)~2;
             *to_page_table = this_page;
             // 如果复制的页面地址为高于LOW_MEM，说明不是从内核空间复制
             // 同时把原页面也设置为只读，这样二者共享了物理页面，如果向任何一个页面写入都会

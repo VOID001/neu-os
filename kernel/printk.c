@@ -30,10 +30,10 @@ struct video_info {
 extern int video_x;
 extern int video_y;
 
-char *video_buffer = VIDEO_MEM;
+char *video_buffer = (char *)VIDEO_MEM;
 
 void video_init() {
-    struct video_info *info = 0x9000;
+    // struct video_info *info = (struct video_info *)0x9000;
 
     video_x = 0;
     video_y = 0;
@@ -50,7 +50,7 @@ int video_gety() {
 }
 
 void update_cursor(int row, int col) {
-    unsigned int pos = (row * VIDEO_X_SZ) + col;
+    unsigned int pos = ((unsigned int)row * VIDEO_X_SZ) + (unsigned int)col;
     // LOW Cursor port to VGA Index Register
     outb(0x3D4, 0x0F);
     outb(0x3D5, (unsigned char)(pos & 0xFF));

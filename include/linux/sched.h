@@ -28,6 +28,7 @@
 
 extern int copy_page_tables(unsigned long from, unsigned long to, unsigned long size);
 extern int free_page_tables(unsigned long from, unsigned long size);
+extern void schedule(void);
 
 typedef int (*fn_ptr)();
 
@@ -67,7 +68,7 @@ struct tss_struct {
     long fs;
     long gs;
     long ldt;
-    long bitmap;
+    unsigned long bitmap;
     struct i387_struct i387;
 };
 
@@ -88,27 +89,30 @@ struct task_struct {
     unsigned long end_data;
     unsigned long brk;              // 总长度brk
     unsigned long start_stack;      // 堆栈段地址
+
     long pid;                       // pid 进程ID
     long father;                    // 父进程ID
     long pgrp;                      // 进程组ID
     long session;                   // 会话(session)ID
     long leader;                    // 会话(session)的首领
+
     unsigned short uid;             // 用户ID
     unsigned short euid;            // 有效用户ID
     unsigned short suid;            // SetUID
     unsigned short gid;             // 组ID
     unsigned short egid;            // 有效组ID
     unsigned short sgid;            // SetGID
+
     long alarm;                     // 报警定时值 单位: jiffies
     long utime;                     // 用户态运行时间
     long stime;                     // 内核态运行时间
     long cutime;                    // 子进程用户态运行时间
     long cstime;                    // 子进程内核态运行时间
-                                    // 以上时间单位均为 jiffies
     long start_time;                // 进程开始运行的时点
+
     unsigned short used_math;       // 是否使用了协处理器
 
-    int tty;
+    // int tty;
     // 下面是和文件系统相关的变量，暂时不使用，先注释掉
     // unsigned short umask;
     // struct m_inode *pwd;
@@ -120,12 +124,12 @@ struct task_struct {
 };
 
 #define INIT_TASK \
-/* state info */ {0, 15, 15, \
-/* signals */    0, {{}, }, 0, \
-/* exit_code, brk */    0, 0, 0, 0, 0, 0, \
-/* pid */    0, -1, 0, 0, 0, \
-/* uid */    0, 0, 0, 0, 0, 0, \
-/* alarm, etc... */   0, 0, 0, 0, 0, 0, \
+/* state info */ {0,15,15, \
+/* signals */    0,{{},},0, \
+/* exit_code, brk */0,0,0,0,0,0, \
+/* pid */    0,-1,0,0,0, \
+/* uid */    0,0,0,0,0,0, \
+/* alarm, etc... */0,0,0,0,0,0,\
 /* math */    0, \
 /* LDT */    { \
         {0, 0},\

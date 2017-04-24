@@ -1,6 +1,7 @@
 #include <linux/sched.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
+#include <linux/sys.h>
 #include <asm/system.h>
 #include <asm/io.h>
 
@@ -170,5 +171,5 @@ void sched_init() {
     outb(0x21, inb_p(0x21) & ~0x01);
 
     // 初始化 system_call
-    set_system_gate(0x80, &system_call)
+    set_system_gate(0x80, &system_call);
 }

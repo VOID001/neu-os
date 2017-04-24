@@ -6,11 +6,14 @@
 #include <linux/kernel.h>
 #include <asm/system.h>
 
+extern void trap_init(void);
+extern void video_init(void);
+extern void sched_init(void);
+extern void mem_init(unsigned long start_mem, unsigned long end_mem);
 
 int memtest_main(void);
 
-void main() {
-    int ret;
+int main() {
     video_init();
     trap_init();
     sched_init();

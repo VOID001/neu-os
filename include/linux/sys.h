@@ -80,5 +80,5 @@ fn_ptr sys_call_table[] = {
     stub_syscall,
     stub_syscall,
     stub_syscall,
-}
+};
 #endif

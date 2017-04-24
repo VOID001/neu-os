@@ -4,6 +4,7 @@
  */
 
 #include <linux/head.h>
+#include <linux/kernel.h>
 #include <asm/io.h>
 #include <asm/system.h>
 
@@ -72,6 +73,7 @@ void do_int3(long *esp, long error_code,
     printk("esi\tedi\tebp\tesp\t\n%x\t%x\t%x\t%x\n",esi, edi, ebp, (long)esp);
     printk("ds\tes\tfs\ttr\n%x\t%x\t%x\t%x\n",ds, es, fs, tr);
     printk("EIP: %x    CS:%x     EFLAGS: %x", esp[0], esp[1], esp[2]);
+    printk("errno = %d", error_code);
     return ;
 }
 
@@ -124,7 +126,7 @@ void do_reserved(long esp, long error_code) {
 }
 
 void do_stub(long esp, long error_code) {
-    printk("stub interrupt!\n");
+    printk("stub interrupt! %d, %d\n", esp, error_code);
 }
 
 void trap_init(void) {
