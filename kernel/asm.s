@@ -180,9 +180,12 @@ coprocessor_error:
 	pushl $do_stub
 	jmp error_code
 
-parallel_interrupt:
-	pushl $do_stub
-	jmp error_code
+parallel_interrupt: # 本版本没有实现，这里只发EOI
+	pushl %eax
+	movb $0x20, %al
+	outb %al, $0x20
+	popl %eax
+	iret
 
 device_not_available:
 	pushl $do_stub
