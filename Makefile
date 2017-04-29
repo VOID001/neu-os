@@ -39,10 +39,11 @@ mm/mm.o:
 
 # Squash the bootimg together
 bootimg: boot/setup boot/bootsect system
-	@dd if=boot/bootsect of=bootimg bs=512 count=1
-	@dd if=boot/setup of=bootimg bs=512 count=4 seek=1
-	@dd if=system of=bootimg bs=512 seek=5
-	@echo "Build bootimg done"
+	@echo -e "\e[1;33mStart building NEU-OS image..."
+	@dd if=boot/bootsect of=bootimg bs=512 count=1 2>/dev/null
+	@dd if=boot/setup of=bootimg bs=512 count=4 seek=1 2>/dev/null
+	@dd if=system of=bootimg bs=512 seek=5 2>/dev/null
+	@echo -e "\e[1;0;32mBuild bootimg done"
 
 run: bootimg
 	$(QEMU) -boot a -fda bootimg
