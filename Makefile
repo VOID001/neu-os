@@ -6,7 +6,7 @@ include Makefile.header
 #BOCHS=bochs
 #STRIP=i686-elf-strip
 
-LDFLAGS	+= -Ttext 0 -e startup_32 -nostdlib
+LDFLAGS	+= -Ttext 0 -e startup_32 -nostdlib #-lgcc
 
 .PHONY=clean run all boot/head.o boot/bootsect boot/setup kernel/kernel.o
 
@@ -46,7 +46,7 @@ bootimg: boot/setup boot/bootsect system
 	@echo -e "\e[1;0;32mBuild bootimg done"
 
 run: bootimg
-	$(QEMU) -boot a -fda bootimg
+	$(QEMU) -boot a -fda bootimg -serial stdio
 
 run_bochs: bootimg
 	$(BOCHS) -q

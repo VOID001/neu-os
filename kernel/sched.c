@@ -4,6 +4,7 @@
 #include <linux/sys.h>
 #include <asm/system.h>
 #include <asm/io.h>
+#include <serial_debug.h>
 
 extern int timer_interrupt(void);
 extern int system_call(void);
@@ -72,7 +73,21 @@ void schedule(void) {
         }
     }
     // switch_to 接收参数为一个 Task 号
+    // show_task_info(task[next]);
+    // s_printk("Scheduler select task %d\n", next);
     switch_to(next)
+}
+
+void show_task_info(struct task_struct *task) {
+    s_printk("Current task Info\n================\n");
+    s_printk("pid = %d\n", task->state);
+    s_printk("counter = %d\n", task->counter);
+    s_printk("start_code = %x\n", task->start_code);
+    s_printk("end_code = %x\n", task->end_code);
+    s_printk("brk = %x\n", current->ldt[0]);
+    s_printk("gid = 0x%x\n", current->gid);
+    s_printk("tss.ldt = 0x%x\n", current->tss.ldt);
+    // s_printk("tss.eip = 0x%x\n", current->eip);
 }
 
 void wake_up(struct task_struct **p) {

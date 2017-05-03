@@ -19,7 +19,7 @@ EFLAGS = 0x24
 OLDESP = 0x28
 OLDSS = 0x2C
 
-nr_system_calls = 72
+nr_system_calls = 72+1 #sys_debug
 
 # offset in task_struct
 state = 0
@@ -68,6 +68,7 @@ ret_from_syscall:
 	pop %ds
 	iret
 
+.align 2
 timer_interrupt:
 	push %ds
 	push %es
@@ -79,8 +80,8 @@ timer_interrupt:
 	movl $0x10, %eax		# 让DS指向内核数据段
 	mov %ax, %ds
 	mov %ax, %es
-	#movl $0x17, %eax
-	#mov	%ax, %fs
+	movl $0x17, %eax
+	mov	%ax, %fs
 	incl jiffies
 	movb $0x20, %al
 	outb %al, $0x20
@@ -91,6 +92,7 @@ timer_interrupt:
 	addl $4, %esp
 	jmp ret_from_syscall
 
+.align 2
 sys_fork:
 	call find_empty_process
 	testl %eax, %eax			# 检查返回值是不是负值, 负值意味着没有获得到pid资源
@@ -103,4 +105,3 @@ sys_fork:
 	call copy_process
 	addl $20, %esp
 1: ret
-	

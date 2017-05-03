@@ -67,7 +67,7 @@ struct tss_struct {
     long ds;
     long fs;
     long gs;
-    long ldt;
+    unsigned long ldt;
     unsigned long bitmap;
     struct i387_struct i387;
 };
@@ -156,6 +156,7 @@ extern void add_timer(long *jiffies, void(*fn)(void));
 extern void sleep_on(struct task_struct **p);
 extern void interruptible_sleep_on(struct task_struct **p);
 extern void wake_up(struct task_struct **p);
+extern void show_task_info(struct task_struct *task);
 
 #define FIRST_TSS_ENTRY 4
 #define FIRST_LDT_ENTRY (FIRST_TSS_ENTRY+1)
@@ -178,7 +179,7 @@ extern void wake_up(struct task_struct **p);
 
 #define switch_to(n) {\
     struct {long a, b;} __tmp; \
-    __asm__("cmpl %%ecx, current\n\t" \
+    __asm__ volatile ("cmpl %%ecx, current\n\t" \
             "je 1f\n\t" \
             "movw %%dx, %1\n\t" \
             "xchgl %%ecx, current\n\t" \
@@ -202,7 +203,7 @@ extern void wake_up(struct task_struct **p);
                     "m" (*((addr) + 4)), \
                     "m" (*((addr) + 7)), \
                     "d" (base) \
-                    :"dx" \
+                    /*:"dx"*/ \
             )
 
 
@@ -219,9 +220,9 @@ extern void wake_up(struct task_struct **p);
             "d" (limit) \
             )
 
-#define set_base(ldt, base) _set_base(((char *)ldt), (base))
+#define set_base(ldt, base) _set_base(((char *)&(ldt)), (base))
 // limit >> 12 是因为当Descriptor中G位置位的时候，Limit单位是4KB
-#define set_limit(ldt, limit) _set_base(((char *)ldt), (limit) >> 12)
+#define set_limit(ldt, limit) _set_limit(((char *)ldt), (limit - 1) >> 12)
 
 static inline unsigned long _get_base(char *addr) {
     unsigned long __base;
@@ -236,7 +237,7 @@ static inline unsigned long _get_base(char *addr) {
     return __base;
 }
 
-#define get_base(ldt) _get_base(((char *)ldt))
+#define get_base(ldt) _get_base(((char *)&(ldt)))
 #define get_limit(segment) ({\
     unsigned long __limit; \
     __asm__ volatile("lsll %1, %0\n\tincl %0":"=r"(__limit):"r"(segment)); \

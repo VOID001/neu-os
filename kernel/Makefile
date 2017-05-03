@@ -1,6 +1,6 @@
 include ../Makefile.header
 
-OBJS = printk.o panic.o traps.o asm.o sched.o system_call.o sys.o
+OBJS = printk.o panic.o traps.o asm.o sched.o system_call.o sys.o fork.o serial_debug.o #vsprintf.o
 
 LDFLAGS	+= -r
 CFLAGS += -I../include

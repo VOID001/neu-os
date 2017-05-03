@@ -4,6 +4,7 @@
  */
 
 #include <linux/head.h>
+#include <linux/sched.h>
 #include <linux/kernel.h>
 #include <asm/io.h>
 #include <asm/system.h>
@@ -38,10 +39,11 @@ void parallel_interrupt(void);
 // 停机进入死循环
 static void die(char *str, long esp_ptr, long nr) {
     long *esp = (long *)esp_ptr;
-    printk("%s: %x", str, nr & 0xffff);
-    printk("EIP: %x:%x\n EFLAGS: %x\n ESP %x:%x\n",
+    printk("%s: %x\n", str, nr & 0xffff);
+    printk("EIP: 0x%x:0x%x\n EFLAGS: 0x%x\n ESP 0x%x:0x%x\n",
             esp[1], esp[0], esp[2], esp[4], esp[3]);
     // Some Process Related code, now stub
+    printk("base 0x%x, limit 0x%x\n", get_base(current->ldt[1]), get_limit(0x17));
     
     printk("No Process now, System HALT!   :(\n");
     for(;;);
@@ -126,7 +128,7 @@ void do_reserved(long esp, long error_code) {
 }
 
 void do_stub(long esp, long error_code) {
-    printk("stub interrupt! %d, %d\n", esp, error_code);
+    printk("stub interrupt! %x, %x\n", esp, error_code);
 }
 
 void trap_init(void) {

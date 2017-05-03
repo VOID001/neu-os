@@ -8,6 +8,7 @@
 
 #include <linux/kernel.h>
 #include <linux/head.h>
+#include <serial_debug.h>
 
 #define LOW_MEM 0x100000ul // 0x00000000 - 0x00100000 为物理内存低 1MB 空间, 是系统代码所在
 #define PAGING_MEMORY (15*1024*1024) // 剩余 15MB 空闲物理内存用于分页
@@ -164,9 +165,9 @@ unsigned long put_page(unsigned long page, unsigned long address) {
     // 计算该线性地址对应的页目录地址
     pg_tbl = (unsigned long *) ((address >> 20) & 0xffc);
     // 如果页目录存在则直接取出 pg_tbl
-    printk("Params: pg_tbl = %x, entry = %x\n", pg_tbl, (address >> 12) & 0x3ff);
+    // printk("Params: pg_tbl = %x, entry = %x\n", pg_tbl, (address >> 12) & 0x3ff);
     if(*pg_tbl & 1) {
-        printk("Page table now available\n");
+        // printk("Page table now available\n");
         pg_tbl = (unsigned long *) (*pg_tbl & 0xfffff000);
     }
     // 否则申请物理页放置页目录
@@ -176,11 +177,11 @@ unsigned long put_page(unsigned long page, unsigned long address) {
             return 0;
         }
         *pg_tbl = tmp | 7;
-        printk("Tmp = %x\n", tmp);
-        printk("Page Table = %x\n", *pg_tbl);
+        // printk("Tmp = %x\n", tmp);
+        // printk("Page Table = %x\n", *pg_tbl);
         pg_tbl = (unsigned long *) tmp;
     }
-    printk("Put Page Success\n");
+    // printk("Put Page Success\n");
     pg_tbl[(address >> 12) & 0x3ff] = page | 7;
     //invalidate();
     return page;
@@ -255,7 +256,7 @@ void do_no_page(unsigned long error_code, unsigned long address) {
     //unsigned long tmp;
     unsigned long page;
 
-    printk("Page Fault at [%x], errono %d\n", address, error_code);
+    s_printk("Page Fault at [%x], errono %d\n", address, error_code);
     address &= 0xfffff000;
     if(!(page = get_free_page()))
         oom();
