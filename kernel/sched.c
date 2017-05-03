@@ -44,7 +44,7 @@ void sleep_on(struct task_struct **p) {
 }
 
 void schedule(void) {
-    s_printk("schedule()\n");
+    // s_printk("schedule()\n");
     // 我们先不考虑信号处理
     int i, next, c;
     struct task_struct **p;
@@ -138,7 +138,7 @@ int sys_pause(void) {
 int counter = 0;
 long volatile jiffies = 0;
 void do_timer(long cpl) {
-    s_printk("tick! %d\n", jiffies);
+    // s_printk("tick! %d\n", jiffies);
     if (!cpl)
         current->stime++;
     else

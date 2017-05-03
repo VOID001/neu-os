@@ -67,8 +67,8 @@ int copy_process(int nr, long ebp, long edi, long esi,
     /* Only for emit the warning! */
     i = none;
     none = i;
-    i = eflags;
-    eflags = i;
+    //i = eflags;
+    //eflags = i;
     /* End */
     
     p = (struct task_struct *) get_free_page();
@@ -89,6 +89,7 @@ int copy_process(int nr, long ebp, long edi, long esi,
     p->cutime = p->cstime = 0;
     p->start_time = jiffies;
     p->tss.back_link = 0;
+    p->tss.eflags = eflags;
     p->tss.esp0 = PAGE_SIZE + (long)p;
     p->tss.ss0 = 0x10;
     p->tss.eip = eip;

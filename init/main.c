@@ -92,8 +92,14 @@ int main() {
     // now user process can execute!
     // but why cannot schedule!
     if(!fork()) {
-        while(1)
-            sys_debug("User process\n");
+        // here we enter init process
+        if(!fork()) {
+            while(1);
+                // sys_debug("Hello User1\n");
+        } else {
+            while(1);
+                // sys_debug("Hello User2\n");
+        }
     }
     while(1);
 }
