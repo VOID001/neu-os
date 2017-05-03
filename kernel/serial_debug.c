@@ -19,7 +19,6 @@ void s_puts(char *a) {
 }
 
 int serial_debugstr(char *str) {
-    s_puts("Called!");
     s_puts(str);
     return 0;
 }

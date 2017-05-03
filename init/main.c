@@ -88,15 +88,14 @@ int main() {
     // s_printk("Test Serial mem_init = %x\n", mem_init);
     // mmtest_main();
     move_to_user_mode();
-    sys_debug("User mode can print string use this syscall");
-    // fork still not work
+    sys_debug("User mode can print string use this syscall\n");
+    // now user process can execute!
+    // but why cannot schedule!
     if(!fork()) {
         while(1)
-        sys_debug("User: Hello\n");
+            sys_debug("User process\n");
     }
-    while(1)
-    sys_debug("Kernel Hello\n");
-        pause();
+    while(1);
 }
 
 void init() {

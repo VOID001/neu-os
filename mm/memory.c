@@ -243,8 +243,12 @@ void un_wp_page(unsigned long * table_entry) {
 // 缺页异常会调用此函数
 void do_wp_page(unsigned long error_code, unsigned long address) {
     error_code = error_code; // 纯粹为了消除警告
-    un_wp_page((unsigned long *) ((((address >> 10) & 0xffc) +
-                ((*(unsigned long *)((address >> 20) & 0xffc)))) & 0xfffff000));
+    // un_wp_page((unsigned long *) ((((address >> 10) & 0xffc) +
+    //             ((*(unsigned long *)((address >> 20) & 0xffc)))) & 0xfffff000));
+    //             这是错误的代码
+    un_wp_page((unsigned long *)
+            (((address>>10)&0xffc) + (0xfffff000 & 
+                *((unsigned long *)((address >> 20) & 0xffc)))));
 }
 
 // 缺页异常会调用此函数
@@ -273,6 +277,7 @@ void do_no_page(unsigned long error_code, unsigned long address) {
 // 做法为仅仅拷贝其页表项内容，不拷贝其物理内存内容
 // 同时当from = 0时表示从内核拷贝，这时我们不需要拷贝 4MB ,仅仅拷贝 640 KB
 int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
+    s_printk("copy_page_tables(0x%x, 0x%x, 0x%x)\n", from, to, size);
     unsigned long *from_page_table;
     unsigned long *to_page_table;
     unsigned long this_page;
@@ -294,17 +299,22 @@ int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
         // from_dir 不存在，就跳过这页页表的复制
         if(!(1 & *from_dir))
             continue;
+        from_page_table = (unsigned long *)(0xfffff000 & *from_dir); // I forget to fetch the from_page_table!! QAQ
+        // s_printk("from_page_table: addr=0x%x\n", (unsigned long)(0xfffff000 & (unsigned long)*from_page_table));
         if(!(to_page_table = (unsigned long *) get_free_page()))
             return -1;
+        // s_printk("to_page_table = 0x%x\n", (unsigned long)(0xfffff000 & (unsigned long)*to_page_table));
         *to_dir = ((unsigned long)to_page_table | 7);
         // 判断是不是复制内核页，如果是则只copy 640KB(0xA0=160个页面)
         nr = (from == 0)?0xA0:1024;
         for(; nr-->0; from_page_table++, to_page_table++) {
             this_page = *from_page_table;
+            // s_printk("this_page_before: addr=0x%x\n", (unsigned long)(0xfffff000 & (unsigned long)this_page));
             if(!(1 & this_page))
                 continue;
             // 这里将复制的页设置为只读
             this_page &= (unsigned long)~2;
+            // s_printk("this_page_after: addr=0x%x\n", (unsigned long)(0xfffff000 & (unsigned long)this_page));
             *to_page_table = this_page;
             // 如果复制的页面地址为高于LOW_MEM，说明不是从内核空间复制
             // 同时把原页面也设置为只读，这样二者共享了物理页面，如果向任何一个页面写入都会
