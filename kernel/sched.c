@@ -75,7 +75,7 @@ void schedule(void) {
     }
     // switch_to 接收参数为一个 Task 号
     // show_task_info(task[next]);
-    s_printk("Scheduler select task %d\n", next);
+    // s_printk("Scheduler select task %d\n", next);
     switch_to(next)
 }
 

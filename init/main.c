@@ -92,18 +92,20 @@ int main() {
     // now user process can execute!
     // but why cannot schedule!
     if(!fork()) {
-        // here we enter init process
-        if(!fork()) {
-            while(1);
-                // sys_debug("Hello User1\n");
-        } else {
-            while(1);
-                // sys_debug("Hello User2\n");
-        }
+        init();
     }
-    while(1);
+    // while(1);
+    //     sys_debug("B");
 }
 
 void init() {
-    while(1);
+    // Here init process (pid = 1) will
+    // print AABB randomly
+    if(!fork()) {
+        while(1)
+            sys_debug("A\n");
+    } else {
+        while(1)
+            sys_debug("B\n");
+    }
 }
