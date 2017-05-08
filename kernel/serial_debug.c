@@ -56,7 +56,6 @@ void s_printk(char *fmt, ...) {
     va_start(ap, fmt);
 
     char c, *s;
-
     while(*fmt) {
         c = *fmt++;
         if(c != '%') {
@@ -86,8 +85,4 @@ void s_printk(char *fmt, ...) {
         }
     }
     return;
-}
-
-void s_printldt(const char* ldt) {
-
 }

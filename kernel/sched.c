@@ -75,7 +75,15 @@ void schedule(void) {
     }
     // switch_to 接收参数为一个 Task 号
     // show_task_info(task[next]);
-    // s_printk("Scheduler select task %d\n", next);
+    // printk("[%x] Scheduler select task %d\n", jiffies, next);
+    // printk("[%x] Scheduler select task\n", next);
+
+    // s_printk("[%x] Scheduler select task %d\n", jiffies, next); // THE 'next' VALUE IS NOT CORRECT!
+    s_printk("Scheduler select task %d\n", next);  // THIS CAUSE CRASH
+    // TODO Fix the bug
+    // These two lines of code will cause OS Crash
+    // When switch to printk it won't
+    // Why?
     switch_to(next)
 }
 
@@ -138,7 +146,6 @@ int sys_pause(void) {
 int counter = 0;
 long volatile jiffies = 0;
 void do_timer(long cpl) {
-    // s_printk("tick! %d\n", jiffies);
     if (!cpl)
         current->stime++;
     else
