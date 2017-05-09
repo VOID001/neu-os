@@ -9,6 +9,7 @@
 #include <linux/kernel.h>
 #include <linux/head.h>
 #include <serial_debug.h>
+#include <linux/mm.h>
 
 #define LOW_MEM 0x100000ul // 0x00000000 - 0x00100000 为物理内存低 1MB 空间, 是系统代码所在
 #define PAGING_MEMORY (15*1024*1024) // 剩余 15MB 空闲物理内存用于分页

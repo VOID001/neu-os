@@ -17,6 +17,7 @@ extern void trap_init(void);
 extern void video_init(void);
 extern void sched_init(void);
 extern void mem_init(unsigned long start_mem, unsigned long end_mem);
+void init();
 
 // Here contains sycall routines
 
@@ -76,8 +77,6 @@ typedef unsigned long size_t;
 int snprintf(char *str, size_t size, const char *fmt, ...);
 
 int main() {
-    int ret;
-    char str[1000] = "";
     video_init();
     trap_init();
     sched_init();
@@ -104,8 +103,18 @@ void init() {
     if(!fork()) {
         while(1)
             sys_debug("A\n");
-    } else {
+    }
+    if(!fork()) {
         while(1)
             sys_debug("B\n");
     }
+    if(!fork()) {
+        while(1)
+            sys_debug("C\n");
+    }
+    if(!fork()) {
+        while(1)
+            sys_debug("D\n");
+    }
+    while(1);
 }

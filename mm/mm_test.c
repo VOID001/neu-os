@@ -5,6 +5,7 @@
 
 #include <linux/kernel.h>
 #include <linux/mm.h>
+#include <serial_debug.h>
 
 #define invalidate() \
     __asm__ volatile("mov %%eax, %%cr3"::"a" (0))
@@ -20,16 +21,16 @@ void testoom() {
 
 // This function is currently buggy
 // Cannot use
-void test_share_page() {
-    // Copy a page then try to write to it
-    copy_page_tables(0x0, 0x4000000, 0xA0000);
-    mm_print_pageinfo(0x4000000);
-    // write to the page at 0x4000000
-    char *w = 0x4000000;
-    *w = 'p';
-    mm_print_pageinfo(0x4000000);
-    while (1);
-}
+// void test_share_page() {
+//     // Copy a page then try to write to it
+//     copy_page_tables(0x0, 0x4000000, 0xA0000);
+//     mm_print_pageinfo(0x4000000);
+//     // write to the page at 0x4000000
+//     char *w = 0x4000000;
+//     *w = 'p';
+//     mm_print_pageinfo(0x4000000);
+//     while (1);
+// }
 
 void test_put_page() {
     char *b = (char *)0x100000;
