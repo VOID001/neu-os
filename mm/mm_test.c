@@ -18,6 +18,19 @@ void testoom() {
     return ;
 }
 
+// This function is currently buggy
+// Cannot use
+void test_share_page() {
+    // Copy a page then try to write to it
+    copy_page_tables(0x0, 0x4000000, 0xA0000);
+    mm_print_pageinfo(0x4000000);
+    // write to the page at 0x4000000
+    char *w = 0x4000000;
+    *w = 'p';
+    mm_print_pageinfo(0x4000000);
+    while (1);
+}
+
 void test_put_page() {
     char *b = (char *)0x100000;
     calc_mem();
@@ -46,14 +59,16 @@ unsigned long *linear_to_pte(unsigned long addr) {
     // Page table address + page_table index = PTE
     //
     // Remember: x >> 12 & 0x3ff != x >> 10 & 0xffc (后者比前者二进制末尾多了两个0)
-    return pde + ((addr >> 12) & 0x3ff);
+    // s_printk("pde = %d\n", (unsigned long)pde + 4);
+    // s_printk("pte.offset = %d\n", (unsigned long)pde + (((addr >> 12) & 0x3ff) << 2));
+    return (unsigned long *)((unsigned long)(pde) + (((addr >> 12) & 0x3ff) << 2));
 }
 
 void disable_linear(unsigned long addr) {
     // Your code here
     // Hint: Modify the correct page table entry
     // then you can make the page Not Present
-    
+
     // Maybe you need a helper function for get
     // the page table entry for a specific address
 
@@ -76,18 +91,21 @@ void mm_read_only(unsigned long addr) {
 
 void mm_print_pageinfo(unsigned long addr) {
     unsigned long *pte = linear_to_pte(addr);
-    printk("Linear addr: 0x%x, PTE addr = 0x%x. Flags[ ", addr, pte);
-    if(*pte & 0x1) printk("P ");
-    if(*pte & 0x2) printk("R/W ");
-    else printk("RO ");
-    if(*pte & 0x4) printk("U/S ");
-    else printk("S ");
-    printk("]\n");
-    printk("Phyaddr = %x\n", (*pte & 0xfffff000));
+    s_printk("[DEBUG] Linear addr: 0x%x, PTE addr = 0x%x. Flags[ ", addr, pte);
+    if(*pte & 0x1) s_printk("P ");
+    if(*pte & 0x2) s_printk("R/W ");
+    else s_printk("RO ");
+    if(*pte & 0x4) s_printk("U/S ");
+    else s_printk("S ");
+    s_printk("]\n");
+    s_printk("[DEBUG] Phyaddr = %x\n", (*pte & 0xfffff000));
 }
 
 
 int mmtest_main(void) {
+    // test_share_page();
+    // return 0;
+    s_printk("0x%x\n", linear_to_pte(0x1000));
     printk("Running Memory function tests\n");
     printk("1. Make Linear Address 0xdad233 unavailable\n");
 
@@ -99,15 +117,14 @@ int mmtest_main(void) {
     // (Hint: add a table entry map to physical address 3MB)
     //
     printk("2. Put page(0x300000) at linear address 0xdad233\n");
-    //put_page(0x300000, 0xdad233);
+    put_page(0x300000, 0xdad233);
 
     unsigned long *x = (unsigned long *)0xdad233;
     *x = 0x23333333;
     printk("X = %x\n", *x);
-    while(1);
 
     // Then make the linear address 0xdad233 Read Only
-    
+
     printk("3. Make 0xdad233 READ ONLY\n");
     mm_read_only(0xdad233);
     x = (unsigned long *)0xdad233;
@@ -126,5 +143,6 @@ int mmtest_main(void) {
     printk("4. Print the page info of 0xdad233 in human readable mode\n");
     mm_print_pageinfo(0xdad233);
 
+    while(1);
     // Please implement
 }

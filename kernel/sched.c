@@ -78,8 +78,8 @@ void schedule(void) {
     // printk("[%x] Scheduler select task %d\n", jiffies, next);
     // printk("[%x] Scheduler select task\n", next);
 
-    // s_printk("[%x] Scheduler select task %d\n", jiffies, next); // THE 'next' VALUE IS NOT CORRECT!
-    s_printk("Scheduler select task %d\n", next);  // THIS CAUSE CRASH
+    s_printk("[DEBUG] [%x] Scheduler select task %d\n", jiffies, next); // THE 'next' VALUE IS NOT CORRECT!
+    s_printk("[DEBUG] Scheduler select task %d\n", next);  // THIS CAUSE CRASH
     // TODO Fix the bug
     // These two lines of code will cause OS Crash
     // When switch to printk it won't

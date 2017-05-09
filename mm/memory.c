@@ -221,16 +221,19 @@ void write_verify(unsigned long address) {
 // 并复制老页面的内容到新页面(Copy On Write)
 //
 void un_wp_page(unsigned long * table_entry) {
+    s_printk("[DEBUG] un_wp_page(0x%x)\n", table_entry);
     unsigned long old_page, new_page;
     old_page = *table_entry & 0xfffff000;
+    s_printk("[DEBUG] old_page = 0x%x\n", old_page);
     // 页面存在且位于1MB以上
     if(old_page >= LOW_MEM && mem_map[MAP_NR(old_page)] == 1) {
+        s_printk("[DEBUG] Above 1MB\n");
         *table_entry |= 2;
         invalidate();
         return ;
     }
     // 无法分配新的页面
-    if(!(new_page = (unsigned long)get_free_page))
+    if(!(new_page = (unsigned long)get_free_page())) // FUCK, I FORGET TO ADD "()" to the function, stuck for nearly two weeks
         oom();
     // 页面被共享, 因为要进行 COW 之后该页面就是独立的了,所以引用计数 -1
     if(old_page >= LOW_MEM)
@@ -242,13 +245,14 @@ void un_wp_page(unsigned long * table_entry) {
 
 // 缺页异常会调用此函数
 void do_wp_page(unsigned long error_code, unsigned long address) {
+    s_printk("[DEBUG] Page Fault(Write) at [%x], errono %d\n", address, error_code);
     error_code = error_code; // 纯粹为了消除警告
-    // un_wp_page((unsigned long *) ((((address >> 10) & 0xffc) +
-    //             ((*(unsigned long *)((address >> 20) & 0xffc)))) & 0xfffff000));
-    //             这是错误的代码
+    // Checked the address caculate correct
+    // IN 0x1000 OUT: 0x1004
     un_wp_page((unsigned long *)
             (((address>>10)&0xffc) + (0xfffff000 & 
                 *((unsigned long *)((address >> 20) & 0xffc)))));
+    mm_print_pageinfo(address);
 }
 
 // 缺页异常会调用此函数
@@ -260,12 +264,14 @@ void do_no_page(unsigned long error_code, unsigned long address) {
     //unsigned long tmp;
     unsigned long page;
 
-    s_printk("Page Fault at [%x], errono %d\n", address, error_code);
+    s_printk("[DEBUG] Page Fault at [%x], errono %d\n", address, error_code);
     address &= 0xfffff000;
     if(!(page = get_free_page()))
         oom();
-    if(put_page(page, address))
+    if(put_page(page, address)) {
+        mm_print_pageinfo(address);
         return ;
+    }
     free_page(page);
     oom();
 }
@@ -277,7 +283,7 @@ void do_no_page(unsigned long error_code, unsigned long address) {
 // 做法为仅仅拷贝其页表项内容，不拷贝其物理内存内容
 // 同时当from = 0时表示从内核拷贝，这时我们不需要拷贝 4MB ,仅仅拷贝 640 KB
 int copy_page_tables(unsigned long from, unsigned long to, unsigned long size) {
-    s_printk("copy_page_tables(0x%x, 0x%x, 0x%x)\n", from, to, size);
+    s_printk("[DEBUG] copy_page_tables(0x%x, 0x%x, 0x%x)\n", from, to, size);
     unsigned long *from_page_table;
     unsigned long *to_page_table;
     unsigned long this_page;
