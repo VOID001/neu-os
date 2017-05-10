@@ -24,6 +24,11 @@ nr_system_calls = 72+1 #sys_debug
 # offset in task_struct
 state = 0
 counter = 4
+priority = 8
+signal = 12
+sigaction = 16
+blocked = (33*16)
+
 
 .align 2
 bad_sys_call:
@@ -58,8 +63,29 @@ system_call:
 	cmp $0, counter(%eax)	# 如果时间片用光，也需要重新调度
 	je reschedule
 ret_from_syscall:
-# 这里暂时不处理信号
+# 这里是信号处理部分
+	movl current, %eax		# task 0 不处理信号
+	cmpl task, %eax
+	je 3f
+	cmpw $0x0f, CS(%esp)		# 如果二者不等，那么说明是通过中断跳转过来的，不处理信号
+	jne 3f						# 
+	cmpw $0x17, OLDSS(%esp)		# 如果二者不等，那么说明堆栈段非用户态堆栈，说明系统调用不是用户态发起的，也不处理
+	jne 3f
+	movl signal(%eax), %ebx
+	movl blocked(%eax), %ecx
+	notl %ecx
+	andl %ebx, %ecx				# 对屏蔽信号和信号set进行运算，如果发现没有信号可以处理，就跳过
+	bsfl %ecx, %ecx
+	je 3f
+	btrl %ecx, %ebx				# 现在ecx里存有第一个有效信号的位置，我们将此信号复位，用Bit Test Reset，将%ebx
+								# 里相应位 reset 掉
+	movl %ebx, signal(%eax)
+	incl %ecx					# 将 offset 调整为从1开始的(1 - 32 信号表示)
+	pushl %ecx					# 将信号压栈
+	call do_signal
 	popl %eax
+# 信号处理完毕
+3:	popl %eax
 	popl %ebx
 	popl %ecx
 	popl %edx
