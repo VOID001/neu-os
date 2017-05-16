@@ -7,6 +7,7 @@ extern int sys_fork();
 extern int sys_pause();
 extern int stub_syscall();
 extern int serial_debugstr(char *str);
+extern int sys_kill(int pid, int sig);
 
 // 目前除了少数syscall之外其余的syscall均为stub状态
 fn_ptr sys_call_table[] = {
@@ -47,7 +48,7 @@ fn_ptr sys_call_table[] = {
     stub_syscall,
     stub_syscall,
     stub_syscall,
-    stub_syscall,
+    sys_kill,
     stub_syscall,
     stub_syscall,
     stub_syscall, // 40
