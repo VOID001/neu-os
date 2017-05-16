@@ -7,7 +7,7 @@
 
 #include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/unistd.h>
+#include <unistd.h>
 #include <asm/system.h>
 #include <asm/io.h>
 // Use to debug serial
@@ -23,28 +23,9 @@ void init();
 
 static inline int fork(void) __attribute__((always_inline));
 static inline int pause(void) __attribute__((always_inline));
-static inline int sys_debug(char *str) __attribute__((always_inline));
-//static inline _syscall0(int, fork);
-
-static inline int fork(void) {
-    long __res;
-    __asm__ volatile("int $0x80\n\t"
-            :"=a" (__res)
-            :"0" (__NR_fork));
-    if( __res >= 0)
-        return (int) __res;
-    return -1;
-}
-
-static inline int sys_debug(char *str) {
-    long __res;
-    __asm__ volatile("int $0x80\n\t"
-            :"=a" (__res)
-            :"0" (__NR_sys_debug), "b" ((long)(str)));
-   if (__res >= 0)
-       return (int) __res;
-   return -1;
-}
+static inline int sys_debug(char *str);
+static inline _syscall0(int,fork)
+static inline _syscall1(int, sys_debug, char *, str)
 
 static inline int pause(void) {
     long __res;
@@ -72,9 +53,7 @@ static inline int pause(void) {
             :::"ax");
 
 int memtest_main(void);
-
-typedef unsigned long size_t;
-int snprintf(char *str, size_t size, const char *fmt, ...);
+void signal_demo_main(void);
 
 int main() {
     video_init();
@@ -91,13 +70,18 @@ int main() {
     // now user process can execute!
     // but why cannot schedule!
     if(!fork()) {
-        init();
+        if(!fork()) {
+            sched_abcd_demo();
+        } else {
+            signal_demo_main();
+        }
+        while(1);
     }
     // while(1);
     //     sys_debug("B");
 }
 
-void init() {
+void sched_abcd_demo() {
     // Here init process (pid = 1) will
     // print AABB randomly
     if(!fork()) {

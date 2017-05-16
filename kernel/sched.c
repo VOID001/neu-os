@@ -6,6 +6,8 @@
 #include <asm/io.h>
 #include <serial_debug.h>
 
+// #define DEBUG
+
 extern int timer_interrupt(void);
 extern int system_call(void);
 
@@ -77,9 +79,10 @@ void schedule(void) {
     // show_task_info(task[next]);
     // printk("[%x] Scheduler select task %d\n", jiffies, next);
     // printk("[%x] Scheduler select task\n", next);
-
+#ifdef DEBUG
     s_printk("[DEBUG] [%x] Scheduler select task %d\n", jiffies, next); // THE 'next' VALUE IS NOT CORRECT!
     s_printk("[DEBUG] Scheduler select task %d\n", next);  // THIS CAUSE CRASH
+#endif
     // TODO Fix the bug
     // These two lines of code will cause OS Crash
     // When switch to printk it won't
@@ -197,3 +200,5 @@ void sched_init() {
     // 初始化 system_call
     set_system_gate(0x80, &system_call);
 }
+
+#undef DEBUG
