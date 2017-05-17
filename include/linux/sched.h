@@ -81,7 +81,7 @@ struct task_struct {
     // 信号相关结构，分别为信号集，响应信号的行为，屏蔽的信号集 
     long signal;
     struct sigaction sigaction[32];
-    long blocked;
+    unsigned long blocked;
     // --- 硬编码部分结束 ---
     int exit_code;      // 其父进程会读取该任务的 exit_code 
     unsigned long start_code;

@@ -14,6 +14,7 @@ void printnum(int num, int base, int sign);
 int get_cursor();
 void update_cursor(int row, int col);
 void panic(const char *str);
+void verify_area(void *addr, unsigned int size);
 
 extern int video_x, video_y;
 

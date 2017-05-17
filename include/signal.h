@@ -36,8 +36,8 @@ typedef unsigned int sigset_t;
 
 // 下面定义 sigaction 需要的结构
 #define SA_NOCLDSTOP 1
-#define SA_NOMASK 0x40000000		// 表示不阻止在某个信号的信号处理程序中再次收到该信号
-#define SA_ONESHOT 0x80000000		// 只调用一次信号处理句柄
+#define SA_NOMASK (int)0x40000000		// 表示不阻止在某个信号的信号处理程序中再次收到该信号
+#define SA_ONESHOT (int)0x80000000		// 只调用一次信号处理句柄
 
 #define SIG_BLOCK 0
 #define SIG_UNBLOCK 1
@@ -70,6 +70,6 @@ int sigismember(sigset_t *mask, int signo);
 int sigpending(sigset_t *set);
 int sigprocmask(int how, sigset_t *set, sigset_t *oldset);
 // 改变对于某个信号sig的处理过程
-int sigaction(int sig, struct sigaction *act, struct sigaction *oldact);
+// int sigaction(int sig, struct sigaction *act, struct sigaction *oldact);
 
 #endif
