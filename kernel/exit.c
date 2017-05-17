@@ -3,6 +3,7 @@
 #include <linux/sched.h>
 #include <linux/kernel.h>
 #include <linux/tty.h>
+#include <serial_debug.h>
 
 static inline int send_sig(long sig, struct task_struct* p, int priv);
 
@@ -16,7 +17,7 @@ int sys_kill(int pid, int sig) {
         while(--p > &FIRST_TASK) {
             if (*p && (*p)->pid == pid) {
                 // 因为我们没有实现sys.c相关的逻辑，这里暂时给予执行kill的用户最高权限
-                if (err = send_sig(sig, *p, 1)) {
+                if ((err = send_sig(sig, *p, 1))) {
                     s_printk("send_sig error err = %d\n", err);
                     retval = err;
                 }

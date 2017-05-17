@@ -54,6 +54,7 @@ static inline int pause(void) {
 
 int memtest_main(void);
 void signal_demo_main(void);
+void sched_abcd_demo(void);
 
 int main() {
     video_init();
@@ -77,8 +78,6 @@ int main() {
         }
         while(1);
     }
-    // while(1);
-    //     sys_debug("B");
 }
 
 void sched_abcd_demo() {

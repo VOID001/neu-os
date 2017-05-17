@@ -18,7 +18,7 @@ void verify_area(void *addr, unsigned int size) {
     size += start & 0xfff;      // size align
     start &= 0xfffff000;        // start align at 4096Byte
     start += get_base(current->ldt[2]);
-    while(size) {
+    while((int)size>0) {
         size -= 4096;
         write_verify(start);
         start += 4096;
