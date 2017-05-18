@@ -8,6 +8,9 @@
 
 // #define DEBUG
 
+#define _S(nr) (1<<((nr)-1))
+#define _BLOCKABLE (~(_S(SIGKILL) | _S(SIGSTOP)))
+
 extern int timer_interrupt(void);
 extern int system_call(void);
 
@@ -46,10 +49,23 @@ void sleep_on(struct task_struct **p) {
 }
 
 void schedule(void) {
-    // s_printk("schedule()\n");
-    // 我们先不考虑信号处理
     int i, next, c;
     struct task_struct **p;
+
+    // 先处理信号
+    for (p = &LAST_TASK; p > &FIRST_TASK; --p) {
+        if(*p) {
+            if((*p)->alarm && (*p)->alarm < jiffies) {
+                (*p)->signal |= (1<<(SIGALRM-1));
+                (*p)->alarm = 0;
+            }
+            if((unsigned long)((*p)->signal) & (unsigned long)(~((unsigned long)(_BLOCKABLE) & ((*p)->blocked))  \
+                        && (unsigned long)((*p)->state) \
+                        == TASK_INTERRUPTIBLE)) {
+                (*p)->state = TASK_RUNNING;
+            }
+        }
+    }
 
     while(1) {
         // 初始化，i, p指向任务链表的末尾
