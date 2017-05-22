@@ -1,6 +1,7 @@
 AS=as --32
 CC=gcc
 LD=ld -m elf_i386
+AR=ar
 OBJCOPY=objcopy
 QEMU=qemu-system-i386
 BOCHS=bochs

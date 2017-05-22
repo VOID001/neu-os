@@ -6,7 +6,7 @@ LDFLAGS += -r
 all: main.o
 
 .c.o:
-	@$(CC) $(CFLAGS) \
+	$(CC) $(CFLAGS) \
 		-c -o $*.o $<
 
 clean:

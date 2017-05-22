@@ -72,7 +72,7 @@ struct tss_struct {
     struct i387_struct i387;
 };
 
-// 进程描述符结构
+// 进程描述符结构 !! 修改这个的时候一定要同时修改下面的 INIT_TASK!!! 不然会有十分诡异的 LDT 装载失败问题！！
 struct task_struct {
     // --- 硬编码部分，下面的不应该修改 ---
     long state;
@@ -112,7 +112,8 @@ struct task_struct {
 
     unsigned short used_math;       // 是否使用了协处理器
 
-    // int tty;
+    // TODO: 增加文件系统支持
+    int tty;
     // 下面是和文件系统相关的变量，暂时不使用，先注释掉
     // unsigned short umask;
     // struct m_inode *pwd;
@@ -131,6 +132,7 @@ struct task_struct {
 /* uid */    0,0,0,0,0,0, \
 /* alarm, etc... */0,0,0,0,0,0,\
 /* math */    0, \
+/* tty */   -1, \
 /* LDT */    { \
         {0, 0},\
         {0x9f, 0xc0fa00}, \

@@ -12,6 +12,7 @@
 #include <asm/io.h>
 // Use to debug serial
 #include <serial_debug.h>
+#include <linux/tty.h>
 
 extern void trap_init(void);
 extern void video_init(void);
@@ -57,25 +58,32 @@ void signal_demo_main(void);
 void sched_abcd_demo(void);
 
 int main() {
-    video_init();
+    s_printk("Booting ...\n");
     trap_init();
+    s_printk("Trap init done \n");
     sched_init();
+    s_printk("Sched init done \n");
     mem_init(0x100000, 0x300000);
+    s_printk("memory init done \n");
+    // video_init();
+    tty_init();
+    s_printk("tty init done \n");
 
     // 初始化物理页内存, 将 1MB - 16MB 地址空间的内存进行初始化
     sti();
     // s_printk("Test Serial mem_init = %x\n", mem_init);
     // mmtest_main();
+    s_printk("Done!\n");
     move_to_user_mode();
     sys_debug("User mode can print string use this syscall\n");
     // now user process can execute!
     // but why cannot schedule!
     if(!fork()) {
-        if(!fork()) {
-            sched_abcd_demo();
-        } else {
-            signal_demo_main();
-        }
+        // if(!fork()) {
+        //     sched_abcd_demo();
+        // } else {
+        //     signal_demo_main();
+        // }
         while(1);
     }
 }

@@ -39,7 +39,7 @@ void parallel_interrupt(void);
 // 停机进入死循环
 static void die(char *str, long esp_ptr, long nr) {
     long *esp = (long *)esp_ptr;
-    printk("%s: %x\n", str, nr & 0xffff);
+    printk("%s: 0x%x\n", str, nr & 0xffff);
     printk("EIP: 0x%x:0x%x\n EFLAGS: 0x%x\n ESP 0x%x:0x%x\n",
             esp[1], esp[0], esp[2], esp[4], esp[3]);
     // Some Process Related code, now stub

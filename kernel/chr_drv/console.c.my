@@ -1,0 +1,486 @@
+#include <linux/kernel.h>
+#include <linux/sched.h>
+#include <asm/io.h>
+#include <asm/system.h>
+#include <linux/tty.h>
+#include <serial_debug.h>
+
+// 在 setup.s 中我们设置了关于 VGA 设备
+// 的相关信息，这里我们取用这些信息
+
+#define ORIG_X (*(unsigned char *)0x90000)
+#define ORIG_Y (*(unsigned char *)0x90001)
+#define ORIG_VIDEO_PAGE (*(unsigned short *)0x90004)
+#define ORIG_VIDEO_MODE (*(unsigned short* )0x90006 & 0xff)
+#define ORIG_VIDEO_COLS (((*(unsigned short *)0x90006) & 0xff00) >> 8)
+#define ORIG_VIDEO_LINES (25)
+#define ORIG_VIDEO_EGA_AX (*(unsigned short *)0x90008)
+#define ORIG_VIDEO_EGA_BX (*(unsigned short *)0x9000a)
+#define ORIG_VIDEO_EGA_CX (*(unsigned short *)0x9000c)
+
+#define VIDEO_TYPE_MDA 0x10     // 显示模式 单色显示器
+#define VIDEO_TYPE_CGA 0x11     // CGA 显示器
+#define VIDEO_TYPE_EGAM 0x20    // EGA/VGA 单色
+#define VIDEO_TYPE_EGAC 0x21    // EGA/VGA 彩色
+
+#define NPAR 16             // 转义字符序列，最大参数个数
+
+// 定义一些在本程序中使用的全局变量
+
+// 键盘中断处理函数，在 kb.S 中
+extern void keyboard_interrupt(void);
+
+static unsigned char video_type;
+static unsigned long video_num_columns;
+static unsigned long video_size_row;
+static unsigned long video_num_lines;
+static unsigned long video_page;
+static unsigned long video_mem_start;
+static unsigned long video_mem_end;
+static unsigned short video_port_reg;
+static unsigned short video_port_val;
+static unsigned short video_erase_char;
+
+// 下面变量用于屏幕滚动
+
+static unsigned long origin;
+static unsigned long scr_end;
+static unsigned long pos;
+static unsigned long x, y;
+static unsigned long top, bottom;
+
+// 处理转义序列的状态机
+static unsigned long state = 0;
+static unsigned long npar, par[NPAR];
+static unsigned long ques = 0;
+static unsigned char attr = 0x07;
+
+#define RESPONSE "\033[?1;2c"       // 此回应表示终端为高级终端
+
+static void sysbeep(void);
+
+// 设置 屏幕定位点 xy 坐标
+static inline void gotoxy(unsigned int newx, unsigned int newy) {
+    if(newx >= video_num_columns || newy >= video_num_lines)
+        return ;
+    x = newx;
+    y = newy;
+    pos = origin + y * video_size_row + (x<<1);
+}
+
+// 设置光标
+static inline void set_cursor(void)
+{
+	cli();
+	outb_p(video_port_reg,14);
+	outb_p(video_port_val,0xff&((pos-video_mem_start)>>9));
+	outb_p(video_port_reg,15);
+	outb_p(video_port_val,0xff&((pos-video_mem_start)>>1));
+	sti();
+}
+
+
+static int saved_x=0;
+static int saved_y=0;
+
+static void save_cur(void)
+{
+	saved_x=x;
+	saved_y=y;
+}
+
+
+static void restore_cur(void)
+{
+	gotoxy(saved_x, saved_y);
+}
+
+static inline void set_origin(void) {
+    cli();
+    outb_p(video_port_reg, 12);
+    outb_p(video_port_val, 0xff & ((origin - video_mem_start) >> 9));
+    outb_p(video_port_reg, 13);
+    outb_p(video_port_val, 0xff & ((origin - video_mem_start) >> 1));
+    sti();
+}
+
+void con_init(void) {
+    register unsigned char a;
+    // 设置显示设备类别提示符
+    char *display_desc = "????";
+    char *display_ptr;
+
+    video_num_columns = ORIG_VIDEO_COLS;    // 显示器的行数
+    video_size_row = video_num_columns * 2; // 每行需要使用的字节数
+    video_num_lines = ORIG_VIDEO_LINES;
+    video_page = ORIG_VIDEO_PAGE;
+    video_erase_char = 0x0720;              // 擦除字符
+
+    if (ORIG_VIDEO_MODE == 7) {
+        video_mem_start = 0xb0000;
+        video_port_reg = 0x3b4;
+        video_port_val = 0x3b5;
+        if ((ORIG_VIDEO_EGA_BX & 0xff) != 0x10) {
+            video_type = VIDEO_TYPE_EGAM;
+            video_mem_end = 0xb8000;
+            display_desc = "EGAm";
+        }
+        else {
+            video_type = VIDEO_TYPE_MDA;
+            video_mem_end = 0xb2000;
+            display_desc = "*MDA";
+        }
+    }
+    else {
+        video_mem_start = 0xb8000;
+        video_port_reg = 0x3d4;
+        video_port_val = 0x3d5;
+        if ((ORIG_VIDEO_EGA_BX & 0xff) != 0x10) {
+            video_type = VIDEO_TYPE_EGAC;
+            video_mem_end = 0xbc000;
+            display_desc = "EGAc";      // qemu 默认的VGA设备类型
+        }
+        else {
+            video_type = VIDEO_TYPE_CGA;
+            video_mem_end = 0xba000;
+            display_desc = "*CGA";
+        }
+    }
+    display_ptr = ((char *)video_mem_start) + video_size_row - 8;   // 写到屏幕右上角，一个字符两个字节，所以 -8
+    while(*display_desc) {
+        *display_ptr++ = *display_desc++;
+        display_ptr++;          // 字符属性位跳过
+    }
+
+    origin = video_mem_start;
+    scr_end = video_mem_start + video_num_lines * video_size_row;
+    top = 0;
+    bottom = video_num_lines;
+
+    // 初始化键盘设备, 和 VGA 指针
+    
+    gotoxy(ORIG_X, ORIG_Y);
+#ifdef DEBUG
+    s_printk("[DEBUG] ORIG_X = %d, ORIG_Y = %d\n", ORIG_X, ORIG_Y);
+#endif
+    set_origin();
+    set_trap_gate(0x21, &keyboard_interrupt);
+    outb_p(0x21, inb_p(0x21)&0xfd); // 取消对键盘中断的屏蔽
+    a = inb_p(0x61);
+    outb_p(0x61, a & 0x80);         // 设置键盘禁止工作，然后重新激活
+    outb(0x61, a)                   // 重新激活，这时键盘已经复位
+}
+
+// 滚屏函数, 向上卷一行
+static void scrup(void) {
+    if(video_type == VIDEO_TYPE_EGAC || video_type == VIDEO_TYPE_EGAM) {
+        if (!top && bottom == video_num_lines) {        // top = 0 且 bottom = 底部行号，表示整屏下移一行
+            origin += video_size_row;       // origin 表示屏幕左上角对应的当前的内存地址, 因为当前
+            pos += video_size_row;
+            scr_end += video_size_row;      // 设置屏幕末端指针指向当前末端
+
+            // 判断是否滚动出了显存范围
+            if (scr_end > video_mem_end) {
+                // 已经滚出显存范围，那么我们抛弃当前的第一行，并且将显存中的内容整体上移
+                // 并在最下面一行填入擦除字符
+                // 这里也可以用非汇编来实现，使用汇编的原因是 linux0.11 源码中如此
+                __asm__ volatile("cld\n\t"
+                        "rep movsl\n\t"
+                        "mov video_num_columns, %1\n\t"
+                        "rep stosw"
+                        :: "a" (video_erase_char),
+                        "c" ((video_num_lines - 1) * video_num_columns >>1 ),
+                        "D" (video_mem_start),
+                        "S" (origin)
+                        );
+                scr_end -= origin - video_mem_start;
+                pos -= origin - video_mem_start;
+                origin = video_mem_start;
+            } else {
+                // fill the last line with empty char
+                __asm__ volatile("cld\n\t"
+                        "rep stosw\n\t"
+                        :: "a" (video_erase_char), 
+                        "c" (video_num_columns),
+                        "D" (scr_end - video_size_row)
+                        );
+            }
+            set_origin();
+        }
+        // 滚非全屏
+        else {
+            __asm__ volatile("cld\n\t"
+                    "rep movsl\n\t"
+                    "movl video_num_columns, %%ecx\n\t"
+                    "rep stosw"
+                    :: "a" (video_erase_char),
+                    "c" ((bottom - top - 1) * video_num_columns >> 1),
+                    "D" ((origin + video_size_row * top)),
+                    "S" ((origin + video_size_row) * (top + 1))
+                    );
+        }
+    }
+    // MDA 屏幕
+    else {
+        __asm__ volatile("cld\n\t"
+                "rep movsl\n\t"
+                "movl video_num_columns, %%ecx\n\t"
+                "rep stosw"
+                :: "a" (video_erase_char),
+                "c" ((bottom - top - 1) * video_num_columns >> 1),
+                "D" ((origin + video_size_row * top)),
+                "S" ((origin + video_size_row) * (top + 1))
+                );
+    }
+}
+
+static void scrdown(void) {
+    __asm__("std\n\t"
+            "rep\n\t"
+            "movsl\n\t"
+            "addl $2,%%edi\n\t" /* %edi has been decremented by 4 */
+            "movl video_num_columns,%%ecx\n\t"
+            "rep\n\t"
+            "stosw"
+            ::"a" (video_erase_char),
+            "c" ((bottom-top-1)*video_num_columns>>1),
+            "D" (origin+video_size_row*bottom-4),
+            "S" (origin+video_size_row*(bottom-1)-4)
+           );
+}
+
+// Line Feed, 换行处理
+static void lf() {
+    if (y + 1 < bottom) {
+        y++;
+        pos += video_size_row;
+        return ;
+    }
+    scrup();
+}
+
+// Reverse Index, 反向索引
+static void ri() {
+    if (y > top) {
+        y--;
+        pos -= video_size_row;
+        return;
+    }
+    scrdown();
+}
+
+// Carriage Return, 回车
+static void cr() {
+    // 光标移动到当前行0列
+    pos -= x << 1;
+    x = 0;
+}
+
+// Del, 删除处理
+static void del() {
+    if (x) {
+        pos -= 2;
+        x--;
+        *(unsigned short *)pos = video_erase_char;
+    }
+}
+
+static void respond(struct tty_struct * tty)
+{
+	char * p = RESPONSE;
+
+	cli();
+	while (*p) {
+		PUTCH(*p,tty->read_q);
+		p++;
+	}
+	sti();
+    // TODO: 处理 copy_to_cooked
+	// copy_to_cooked(tty);
+}
+
+// 繁琐的 console 处理，这部分直接拷贝了 linux0.11 的代码
+void con_write(struct tty_struct * tty)
+{
+	int nr;
+	char c;
+
+	nr = CHARS(tty->write_q);
+	while (nr--) {
+		GETCH(tty->write_q,c);
+		switch(state) {
+			case 0:
+				if (c>31 && c<127) {
+					if (x>=video_num_columns) {
+						x -= video_num_columns;
+						pos -= video_size_row;
+						lf();
+					}
+					__asm__("movb attr,%%ah\n\t"
+						"movw %%ax,%1\n\t"
+						::"a" (c),"m" (*(short *)pos)
+						);
+					pos += 2;
+					x++;
+				} else if (c==27)
+					state=1;
+				else if (c==10 || c==11 || c==12)
+					lf();
+				else if (c==13)
+					cr();
+				else if (c==ERASE_CHAR(tty))
+					del();
+				else if (c==8) {
+					if (x) {
+						x--;
+						pos -= 2;
+					}
+				} else if (c==9) {
+					c=8-(x&7);
+					x += c;
+					pos += c<<1;
+					if (x>video_num_columns) {
+						x -= video_num_columns;
+						pos -= video_size_row;
+						lf();
+					}
+					c=9;
+				} else if (c==7)
+					sysbeep();
+				break;
+			case 1:
+				state=0;
+				if (c=='[')
+					state=2;
+				else if (c=='E')
+					gotoxy(0,y+1);
+				else if (c=='M')
+					ri();
+				else if (c=='D')
+					lf();
+				else if (c=='Z')
+					respond(tty);
+				else if (c=='7')
+					save_cur();
+				else if (c=='8')
+					restore_cur();
+				break;
+			case 2:
+				for(npar=0;npar<NPAR;npar++)
+					par[npar]=0;
+				npar=0;
+				state=3;
+				if ((ques=(c=='?')))
+					break;
+			case 3:
+				if (c==';' && npar<NPAR-1) {
+					npar++;
+					break;
+				} else if (c>='0' && c<='9') {
+					par[npar]=10*par[npar]+c-'0';
+					break;
+				} else state=4;
+			case 4:
+				state=0;
+				switch(c) {
+					case 'G': case '`':
+						if (par[0]) par[0]--;
+						gotoxy(par[0],y);
+						break;
+					case 'A':
+						if (!par[0]) par[0]++;
+						gotoxy(x,y-par[0]);
+						break;
+					case 'B': case 'e':
+						if (!par[0]) par[0]++;
+						gotoxy(x,y+par[0]);
+						break;
+					case 'C': case 'a':
+						if (!par[0]) par[0]++;
+						gotoxy(x+par[0],y);
+						break;
+					case 'D':
+						if (!par[0]) par[0]++;
+						gotoxy(x-par[0],y);
+						break;
+					case 'E':
+						if (!par[0]) par[0]++;
+						gotoxy(0,y+par[0]);
+						break;
+					case 'F':
+						if (!par[0]) par[0]++;
+						gotoxy(0,y-par[0]);
+						break;
+					case 'd':
+						if (par[0]) par[0]--;
+						gotoxy(x,par[0]);
+						break;
+					case 'H': case 'f':
+						if (par[0]) par[0]--;
+						if (par[1]) par[1]--;
+						gotoxy(par[1],par[0]);
+						break;
+					case 'J':
+                        // TODO: 处理这些转义
+						// csi_J(par[0]);
+						break;
+					case 'K':
+						// csi_K(par[0]);
+						break;
+					case 'L':
+						// csi_L(par[0]);
+						break;
+					case 'M':
+						// csi_M(par[0]);
+						break;
+					case 'P':
+						// csi_P(par[0]);
+						break;
+					case '@':
+						// csi_at(par[0]);
+						break;
+					case 'm':
+						// csi_m();
+						break;
+					case 'r':
+						if (par[0]) par[0]--;
+						if (!par[1]) par[1] = video_num_lines;
+						if (par[0] < par[1] &&
+						    par[1] <= video_num_lines) {
+							top=par[0];
+							bottom=par[1];
+						}
+						break;
+					case 's':
+						save_cur();
+						break;
+					case 'u':
+						restore_cur();
+						break;
+				}
+		}
+	}
+	set_cursor();
+}
+
+
+void sysbeepstop(void)
+{
+	/* disable counter 2 */
+	outb(inb_p(0x61)&0xFC, 0x61);
+}
+
+int beepcount = 0;
+
+static void sysbeep(void)
+{
+	/* enable counter 2 */
+	outb_p(inb_p(0x61)|3, 0x61);
+	/* set command for counter 2, 2 byte write */
+	outb_p(0xB6, 0x43);
+	/* send 0x637 for 750 HZ */
+	outb_p(0x37, 0x42);
+	outb(0x06, 0x42);
+	/* 1/8 second */
+	beepcount = HZ/8;	
+}

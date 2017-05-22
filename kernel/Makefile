@@ -8,14 +8,18 @@ CFLAGS += -I../include
 
 .PHONY=clean run all
 
-all: kernel.o
+all: kernel.o chr_drv/chr_drv.a
 
 kernel.o: $(OBJS)
 	$(LD) $(LDFLAGS) -o kernel.o $(OBJS)
+
+chr_drv/chr_drv.a:
+	@make -C chr_drv
 
 .c.o: 
 	@$(CC) $(CFLAGS) \
 		-c -o $*.o $<
 
 clean:
-	rm -f $(OBJS) kernel.o
+	- rm -f $(OBJS) kernel.o
+	- @make clean -C chr_drv

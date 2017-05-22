@@ -1,8 +1,7 @@
 .code32
 
 # Code to implement low-level 80386 interrupt handler
-# We'll handle int0 - int16 here, some interrupts will
-# push addtional error code onto stack, so we need to implement two common
+# We'll handle int0 - int16 here, some interrupts will # push addtional error code onto stack, so we need to implement two common
 # handler
 
 # 实现 Intel 80386 硬件相关中断，即中断号 0 - 16 的汇编处理程序
@@ -190,6 +189,7 @@ parallel_interrupt: # 本版本没有实现，这里只发EOI
 device_not_available:
 	pushl $do_stub
 	jmp error_code
+
 
 # int7 设备不存在 将在 kernel/system_call.s 中实现
 # int14 页错误 将在 mm/page.s 中实现

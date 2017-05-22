@@ -13,9 +13,10 @@ LDFLAGS	+= -Ttext 0 -e startup_32 -nostdlib #-lgcc
 all: bootimg
 
 OBJS = boot/head.o init/main.o kernel/kernel.o mm/mm.o
+DRIVERS = kernel/chr_drv/chr_drv.a #kernel/blk_drv/blk_drv.a
 
 system: $(OBJS)
-	@$(LD) $(LDFLAGS) $(OBJS) -o system.sym
+	@$(LD) $(LDFLAGS) $(OBJS) $(DRIVERS) -o system.sym
 	@$(STRIP) system.sym -o system.o
 	@$(OBJCOPY) -O binary -R .note -R .comment system.o system
 

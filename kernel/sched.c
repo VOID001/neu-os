@@ -59,11 +59,11 @@ void schedule(void) {
                 (*p)->signal |= (1<<(SIGALRM-1));
                 (*p)->alarm = 0;
             }
-            if((unsigned long)((*p)->signal) & (unsigned long)(~((unsigned long)(_BLOCKABLE) & ((*p)->blocked))  \
-                        && (unsigned long)((*p)->state) \
-                        == TASK_INTERRUPTIBLE)) {
+            // if((unsigned long)((*p)->signal) & (((unsigned long)(_BLOCKABLE) & ~((*p)->blocked))  \
+            //             && (unsigned long)((*p)->state) \
+            //             == TASK_INTERRUPTIBLE)) {
+            if(((*p)->signal & (_BLOCKABLE &  ~(*p)->blocked)) && (*p)->state == TASK_INTERRUPTIBLE)
                 (*p)->state = TASK_RUNNING;
-            }
         }
     }
 
@@ -116,6 +116,10 @@ void show_task_info(struct task_struct *task) {
     s_printk("gid = 0x%x\n", current->gid);
     s_printk("tss.ldt = 0x%x\n", current->tss.ldt);
     // s_printk("tss.eip = 0x%x\n", current->eip);
+}
+
+void show_stat() {
+    s_printk("STUB: Show stat\n");
 }
 
 void wake_up(struct task_struct **p) {
