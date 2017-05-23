@@ -1,6 +1,6 @@
 #include <linux/kernel.h>
 #include <signal.h>
-#include <linux/types.h>
+#include <sys/types.h>
 #include <serial_debug.h>
 #include <asm/segment.h>
 #include <linux/sched.h>
