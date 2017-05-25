@@ -18,4 +18,5 @@ kernel.o: $(OBJS)
 		-c -o $*.o $<
 
 clean:
-	rm -f $(OBJS) kernel.o
+	- rm -f $(OBJS) kernel.o
+	- make -C chr_drv clean

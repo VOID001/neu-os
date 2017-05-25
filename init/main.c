@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <asm/system.h>
 #include <asm/io.h>
+#include <linux/tty.h>
 // Use to debug serial
 #include <serial_debug.h>
 
@@ -61,6 +62,7 @@ int main() {
     trap_init();
     sched_init();
     mem_init(0x100000, 0x300000);
+    tty_init();
 
     // 初始化物理页内存, 将 1MB - 16MB 地址空间的内存进行初始化
     sti();
@@ -72,9 +74,9 @@ int main() {
     // but why cannot schedule!
     if(!fork()) {
         if(!fork()) {
-            sched_abcd_demo();
+            // sched_abcd_demo();
         } else {
-            signal_demo_main();
+            // signal_demo_main();
         }
         while(1);
     }

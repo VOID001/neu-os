@@ -1,4 +1,5 @@
 *.o
+*.a
 *.sym
 boot/bootsect
 env.sh

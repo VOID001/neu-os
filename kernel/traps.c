@@ -155,5 +155,8 @@ void trap_init(void) {
         set_trap_gate(i, &reserved);
     }
     set_trap_gate(45, &irq13);
+    // 开放外部中断 8259
+    outb_p(0x21, inb_p(0x21)&0xfb);
+    outb(0xA1, inb_p(0xA1)&0xdf);
     set_trap_gate(39, &parallel_interrupt);
 }
