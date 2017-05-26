@@ -80,6 +80,9 @@ void s_printk(char *fmt, ...) {
                 while(*s)
                     s_putchar(*s++);
                 break;
+            case 'c':
+                s_putchar(va_arg(ap, char));
+                break;
             case '%':
                 s_putchar('%');
         }

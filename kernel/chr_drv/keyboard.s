@@ -19,6 +19,7 @@ keyboard_interrupt:
 # 读取扫描码
 	inb $0x60, %al
 	push %ax
+# 发送 EOI 给8259
 	movb $0x20, %al
 	outb %al, $0x20
 	call do_keyboard_interrupt
