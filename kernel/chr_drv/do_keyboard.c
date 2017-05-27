@@ -2,6 +2,8 @@
 #include <linux/head.h>
 #include <asm/system.h>
 #include <serial_debug.h>
+#include <linux/tty.h>
+#include <linux/sched.h>
 
 #define RELEASE_CHAR(a) ((a) & 0x80)
 #define CAPS 0x3A
@@ -81,7 +83,10 @@ void do_keyboard_interrupt(short scancode) {
             }
         }
         else if (lctrl || rctrl) {
-
+            // here we need ctrl escape
+        }
+        else if (lalt || ralt) {
+            // here we do nothing :/
         }
         else {
             ch = scancode_table[scancode];
@@ -89,8 +94,14 @@ void do_keyboard_interrupt(short scancode) {
                 ch = toupper(ch);
             }
         }
-        s_printk("[DEBUG] Keyboard Press 0x%x [%c]\n", scancode, ch);
-        printk("%c", ch);
+        // TODO: 使得 tty 和进程对应, 当前都是指向 tty_table[0]
+        // push the parsed char into queue
+        if(tty_push_q(&tty_table[0].read_q, ch)) {
+            s_printk("[DEBUG] read queue full\n");
+            // here we need to sleep to wait queue
+            // not full
+        }
+        tty_queue_stat(&tty_table[0].read_q);
     }
     return ;
 }

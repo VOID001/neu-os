@@ -112,7 +112,7 @@ struct task_struct {
 
     unsigned short used_math;       // 是否使用了协处理器
 
-    // int tty;
+    int tty;
     // 下面是和文件系统相关的变量，暂时不使用，先注释掉
     // unsigned short umask;
     // struct m_inode *pwd;
@@ -131,6 +131,7 @@ struct task_struct {
 /* uid */    0,0,0,0,0,0, \
 /* alarm, etc... */0,0,0,0,0,0,\
 /* math */    0, \
+/* tty */    -1, \
 /* LDT */    { \
         {0, 0},\
         {0x9f, 0xc0fa00}, \
