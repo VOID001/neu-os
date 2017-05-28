@@ -7,14 +7,14 @@
 // 定义对 tty_queue 的操作
 // tty_queue 是一个循环队列，操作要注意这一点
 
-int tty_isempty_q(const struct tty_queue q) {
-    if (q.head == q.tail)
+int tty_isempty_q(const struct tty_queue *q) {
+    if (q->head == q->tail)
         return 1;
     return 0;
 }
 
-int tty_isfull_q(const struct tty_queue q) {
-    if ((q.tail + 1) % TTY_BUF_SIZE == q.head)
+int tty_isfull_q(const struct tty_queue *q) {
+    if ((q->tail + 1) % TTY_BUF_SIZE == q->head)
         return 1;
     return 0;
 }
@@ -28,11 +28,19 @@ char tty_pop_q(struct tty_queue *q) {
 
 // 队列满状态下返回 -1
 int tty_push_q(struct tty_queue *q, char ch) {
-    if (tty_isfull_q(*q))
+    if (tty_isfull_q(q))
         return -1;
     q->buf[q->tail] = ch;
     q->tail = (q->tail + 1) % TTY_BUF_SIZE;
     return 0;
+}
+
+char tty_queue_head(const struct tty_queue *q) {
+    return q->buf[q->head];
+}
+
+char tty_queue_tail(const struct tty_queue *q) {
+    return q->buf[q->tail];
 }
 
 void tty_queue_stat(const struct tty_queue *q) {

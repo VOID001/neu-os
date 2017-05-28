@@ -6,7 +6,8 @@
 #include <serial_debug.h>
 #include <linux/tty.h>
 
-extern void keyboard_interrupt(char scancode);
+void con_init();
+extern void con_write(struct tty_struct *tty);
 
 // 这里我们用 C99 的 dot initializer 初始化
 struct tty_struct tty_table[] = {
@@ -21,25 +22,66 @@ struct tty_struct tty_table[] = {
         .write_q = {
             .head = 0,
             .tail = 0,
+        },
+        .buffer = {
+            .head = 0,
+            .tail = 0
         }
     },
 };
 
 // struct tty_queue read_q;
-
-void con_init(void) {
-    register unsigned char a;
-    set_trap_gate(0x21, &keyboard_interrupt);
-    outb_p(0x21, inb_p(0x21)&0xfd);
-    a = inb_p(0x61);
-    outb_p(0x61, a | 0x80);
-    outb(0x61, a);
-}
-
 void tty_init(void) {
-    // read_q.head = 0;
-    // read_q.tail = 0;
-    // s_printk("{%d %d %d}", &read_q, read_q.head, read_q.tail);
-    // tty_queue_stat(&read_q);
+    tty_table[0].write = con_write;
     con_init();
 }
+
+// copy_to_buffer handle the keyboard input
+// to tty echo char
+void copy_to_buffer(struct tty_struct *tty) {
+    char ch;
+    struct tty_queue *read_q= &tty->read_q;
+    struct tty_queue *buffer= &tty->buffer;
+    while(!tty_isempty_q(&tty->read_q)) {
+        ch = tty_pop_q(read_q); 
+        // Judge if it's a normal character
+        // if (ch < 32) {
+        //     // This is control character
+        //     continue;
+        // }
+        switch(ch) {
+            case '\b':
+                // This is backspace char
+                if (!tty_isempty_q(buffer)) {
+                    if(tty_queue_tail(buffer) == '\n')  // \n 不能被清除掉
+                       continue ;
+                    buffer->tail = (buffer->tail - 1) % TTY_BUF_SIZE;
+                } else {
+                    continue;
+                }
+                break;
+            case '\n':
+            default:
+                if (!tty_isfull_q(buffer)) {
+                    tty_push_q(buffer, ch);
+                } else {
+                    // here we need to sleep until the queue
+                    // is not full
+                }
+                break;
+        }
+
+        if (tty->flags | TTY_ECHO) {
+            tty_push_q(&tty->write_q, ch);
+            tty->write(tty);
+        }
+    }
+    return ;
+}
+
+void tty_write(struct tty_struct* tty) {
+    tty->write(tty);
+    return ;
+}
+
+

@@ -63,6 +63,8 @@ int main() {
     sched_init();
     mem_init(0x100000, 0x300000);
     tty_init();
+    printk("TTY Init done\n", 1);
+    printk("root@neu-os# ");
 
     // 初始化物理页内存, 将 1MB - 16MB 地址空间的内存进行初始化
     sti();

@@ -94,6 +94,7 @@ void do_keyboard_interrupt(short scancode) {
                 ch = toupper(ch);
             }
         }
+        s_printk("[DEBUG] Keyboard Press 0x%x[ %d ]\n", scancode, ch);
         // TODO: 使得 tty 和进程对应, 当前都是指向 tty_table[0]
         // push the parsed char into queue
         if(tty_push_q(&tty_table[0].read_q, ch)) {
@@ -101,7 +102,10 @@ void do_keyboard_interrupt(short scancode) {
             // here we need to sleep to wait queue
             // not full
         }
+        copy_to_buffer(&tty_table[0]);
+#ifdef DEBUG
         tty_queue_stat(&tty_table[0].read_q);
+#endif
     }
     return ;
 }
