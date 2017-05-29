@@ -18,6 +18,7 @@ extern void trap_init(void);
 extern void video_init(void);
 extern void sched_init(void);
 extern void mem_init(unsigned long start_mem, unsigned long end_mem);
+extern int user_tty_read(int channel, char *buf, int nr);
 void init();
 
 // Here contains sycall routines
@@ -63,11 +64,11 @@ int main() {
     sched_init();
     mem_init(0x100000, 0x300000);
     tty_init();
+    sti();
     printk("TTY Init done\n", 1);
     printk("root@neu-os# ");
 
     // 初始化物理页内存, 将 1MB - 16MB 地址空间的内存进行初始化
-    sti();
     // s_printk("Test Serial mem_init = %x\n", mem_init);
     // mmtest_main();
     move_to_user_mode();
@@ -76,24 +77,36 @@ int main() {
     // but why cannot schedule!
     if(!fork()) {
         if(!fork()) {
-            // sched_abcd_demo();
+            sched_abcd_demo();
         } else {
             // signal_demo_main();
         }
         while(1);
     }
+    // printk("buf = %s\n", buf);
 }
 
 void sched_abcd_demo() {
     // Here init process (pid = 1) will
     // print AABB randomly
+    char buf[100] = "Halo";
+    user_tty_read(0, buf, 10);
+    sys_debug("Buf = ");
+    sys_debug(buf);
+    sys_debug("\n");
+    while(1);
     if(!fork()) {
-        while(1)
-            sys_debug("A\n");
+        while(1) {
+            sys_debug(buf);
+            sys_debug("\n");
+        }
     }
     if(!fork()) {
-        while(1)
-            sys_debug("B\n");
+        user_tty_read(0, buf, 10);
+        while(1) {
+            sys_debug(buf);
+            sys_debug("\n");
+        }
     }
     if(!fork()) {
         while(1)

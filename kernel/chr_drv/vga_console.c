@@ -114,7 +114,7 @@ void con_write(struct tty_struct *tty) {
     char ch;
     s_printk("Console write called\n");
     while (!tty_isempty_q(&tty->write_q)) {
-        tty_queue_stat(&tty->write_q);
+        // tty_queue_stat(&tty->write_q);
         ch = tty_pop_q(&tty->write_q);
         video_putchar(ch);
     }

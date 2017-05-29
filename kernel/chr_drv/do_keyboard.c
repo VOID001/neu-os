@@ -25,7 +25,7 @@ const char shift_scancode_table[] = "..!@#$%^&*()_+\b.QWERTYUIOP{}\n.ASDFGHJKL:\
 // to be here but just for convenience
 char toupper(char ch) {
     if (ch >= 'a' && ch <= 'z') {
-        ch = ch - 'a' + 'A';
+        ch = (char)(ch - 'a' + 'A');
     }
     return ch;
 }
@@ -107,5 +107,8 @@ void do_keyboard_interrupt(short scancode) {
         tty_queue_stat(&tty_table[0].read_q);
 #endif
     }
+    // Wakeup the buffer queue
+    // 我们只有在收到 \n EOF 的时候才唤醒队列
+    // wake_up(&tty_table[0].buffer.wait_proc);
     return ;
 }

@@ -1,6 +1,7 @@
 include ../../Makefile.header
 
-OBJS = do_keyboard.o keyboard.o tty_io.o tty_queue.o vga_console.o
+OBJS = do_keyboard.o keyboard.o tty_io.o tty_queue.o vga_console.o \
+	   tty_read.o
 
 LDFLAGS	+= -r
 CFLAGS += -I../../include

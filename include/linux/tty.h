@@ -34,5 +34,6 @@ int tty_push_q(struct tty_queue *q, char ch);
 void tty_queue_stat(const struct tty_queue *q);
 void tty_write(struct tty_struct *tty);
 void copy_to_buffer(struct tty_struct *tty);
+int tty_read(int channel, char *buf, int nr);
 
 #endif

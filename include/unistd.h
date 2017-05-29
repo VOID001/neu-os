@@ -11,6 +11,9 @@
 #define __NR_ssetmask 69
 #define __NR_sys_debug 72
 
+// Just for debug
+#define __NR_user_tty_read 0
+
 #define _syscall0(type, name)  \
 type name(void) \
 { \
