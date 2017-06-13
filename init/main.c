@@ -28,6 +28,7 @@ static inline int pause(void) __attribute__((always_inline));
 static inline int sys_debug(char *str);
 static inline _syscall0(int,fork)
 static inline _syscall1(int, sys_debug, char *, str)
+static inline _syscall1(int, sleep, long, seconds)
 
 static inline int pause(void) {
     long __res;
@@ -91,30 +92,30 @@ void sched_abcd_demo() {
     // print AABB randomly
     char buf[100] = "Halo";
     user_tty_read(0, buf, 10);
-    sys_debug("Buf = ");
-    sys_debug(buf);
-    sys_debug("\n");
     while(1);
     if(!fork()) {
         while(1) {
-            sys_debug(buf);
-            sys_debug("\n");
+            sys_debug("A");
+            sleep(1);
         }
     }
     if(!fork()) {
-        user_tty_read(0, buf, 10);
         while(1) {
-            sys_debug(buf);
-            sys_debug("\n");
+            sys_debug("B");
+            sleep(2);
         }
     }
     if(!fork()) {
-        while(1)
-            sys_debug("C\n");
+        while(1) {
+            sys_debug("C");
+            sleep(3);
+        }
     }
     if(!fork()) {
-        while(1)
-            sys_debug("D\n");
+        while(1) {
+            sys_debug("D");
+            sleep(4);
+        }
     }
     while(1);
 }

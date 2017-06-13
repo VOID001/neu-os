@@ -4,6 +4,7 @@
 #ifdef __LIBRARY__
 
 #define __NR_fork 2
+#define __NR_sleep 10
 #define __NR_pause 29
 #define __NR_kill 37
 #define __NR_sigaction 67

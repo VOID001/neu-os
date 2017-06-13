@@ -40,10 +40,11 @@ void do_signal(long signr, long eax, long ebx, long ecx,
     }
     // DEFAULT HANDLER
     if (!sa_handler) {
-        if(signr == SIGCHLD)
-            return;
-        else
-            panic("Default signal handler");
+        return ;
+        // if(signr == SIGCHLD)
+        //     return;
+        // else
+        //     sys_debug("Default signal handler");
     }
     // User registered signal handler, then process
     if ((sa->sa_flags | SA_ONESHOT)) {

@@ -13,6 +13,8 @@ extern int sys_sgetmask(void);
 extern int sys_ssetmask(int newmask);
 // Just for debug use
 extern int tty_read(int channel, char *buf, int nr);
+extern int sys_alarm(long seconds);
+extern int sys_sleep(long seconds);
 
 // 目前除了少数syscall之外其余的syscall均为stub状态
 fn_ptr sys_call_table[] = {
@@ -26,7 +28,7 @@ fn_ptr sys_call_table[] = {
     stub_syscall,
     stub_syscall,
     stub_syscall,
-    stub_syscall, // 10
+    sys_sleep, // 10
     stub_syscall,
     stub_syscall,
     stub_syscall,

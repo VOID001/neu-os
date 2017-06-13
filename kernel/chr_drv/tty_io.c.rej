@@ -1,0 +1,13 @@
+--- kernel/chr_drv/tty_io.c
++++ kernel/chr_drv/tty_io.c
+@@ -141,9 +141,7 @@ int tty_read(int channel, char *buf, int nr) {
+             break;
+         }
+         /* if (ch == CTRL_INT) return -1; */
+-        put_fs_byte(ch, p);
+-        *p++ = ch;
+-        s_printk("%s\n", buf);
++        put_fs_byte(ch, p++);
+         len++;
+         nr--;
+     }

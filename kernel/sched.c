@@ -55,13 +55,20 @@ void schedule(void) {
     // 先处理信号
     for (p = &LAST_TASK; p > &FIRST_TASK; --p) {
         if(*p) {
+            // 如果 进程 p 有 alarm 而且目前时间已经超过 alarm
+            // 对进程 p 发送 SIGALARM 信号
             if((*p)->alarm && (*p)->alarm < jiffies) {
                 (*p)->signal |= (1<<(SIGALRM-1));
+#ifdef DEBUG
+                s_printk("[DEBUG] process get SIGALRM signal: 0x%x mask: 0x%x\n blockable= 0x%x", \
+                        (*p)->signal, (*p)->blocked, _BLOCKABLE);
+#endif
                 (*p)->alarm = 0;
             }
-            if((unsigned long)((*p)->signal) & (unsigned long)(~((unsigned long)(_BLOCKABLE) & ((*p)->blocked))  \
+            // 如果进程收到了信号，那么就对进程进行唤醒
+            if(((unsigned long)((*p)->signal) & (unsigned long)(((unsigned long)(_BLOCKABLE) & (~(*p)->blocked))))  \
                         && (unsigned long)((*p)->state) \
-                        == TASK_INTERRUPTIBLE)) {
+                        == TASK_INTERRUPTIBLE) {
                 (*p)->state = TASK_RUNNING;
             }
         }
@@ -154,6 +161,15 @@ int sys_pause(void) {
     current->state = TASK_INTERRUPTIBLE;
     schedule();
     return 0;
+}
+
+int sys_alarm(long seconds) {
+    int old = current->alarm;
+    if (old) {
+        old = (old - jiffies) / HZ;
+    }
+    current->alarm = (seconds > 0)?jiffies + HZ * seconds:0;
+    return (old);
 }
 
 // 计时器函数 do_timer, 记录程序运行时间，如果处于 CPL = 2 的进程执行时间超过时间片

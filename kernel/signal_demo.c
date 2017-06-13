@@ -28,7 +28,7 @@ void signal_demo_main(void) {
     int ret = 0;
     struct sigaction sa_action;
     sa_action.sa_handler = demo_handle;
-    sa_action.sa_flags |= SA_NOMASK;
+    // sa_action.sa_flags |= SA_NOMASK; // TODO: Add mask
     sa_action.sa_mask = 0;
     sa_action.sa_restorer = __sig_restore;
     ret = sigaction(SIGUSR1, &sa_action, NULL);
