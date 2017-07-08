@@ -1,5 +1,0 @@
-floppya: 1_44="./bootimg", status=inserted  # Use Floppy Disk A for booting
-boot: floppy
-display_library: x, options="gui_debug"    # Uncomment this line to enable GUI debugger
-#gdbstub: enabled=1, port=1234
-
