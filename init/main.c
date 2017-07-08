@@ -90,8 +90,10 @@ int main() {
 void sched_abcd_demo() {
     // Here init process (pid = 1) will
     // print AABB randomly
-    char buf[100] = "Halo";
-    user_tty_read(0, buf, 10);
+    char buf[100] = "";
+    user_tty_read(0, buf, 1);
+    // user_tty_read(0, buf, 2);
+    // user_tty_read(0, buf, 2);
     while(1);
     if(!fork()) {
         while(1) {

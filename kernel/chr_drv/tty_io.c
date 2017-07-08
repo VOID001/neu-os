@@ -47,11 +47,7 @@ void copy_to_buffer(struct tty_struct *tty) {
     struct tty_queue *buffer= &tty->buffer;
     while(!tty_isempty_q(&tty->read_q)) {
         ch = tty_pop_q(read_q); 
-        // Judge if it's a normal character
-        // if (ch < 32) {
-        //     // This is control character
-        //     continue;
-        // }
+        // TODO Judge if it's a normal character
         switch(ch) {
             case '\b':
                 // This is backspace char
@@ -64,8 +60,10 @@ void copy_to_buffer(struct tty_struct *tty) {
                 }
                 break;
             case -1:
+            // We do not process \n here, process it in tty_read
             case '\n':
-                s_printk("Wakeup!\n");
+                s_printk("Enter wake the tty read queue up!\n");
+                tty_push_q(buffer, ch);
                 wake_up(&tty_table[0].buffer.wait_proc);
                 break;
                 // EOF
@@ -94,70 +92,89 @@ void tty_write(struct tty_struct* tty) {
 
 // 队列为空时，进程进入睡眠状态, 可被中断唤醒
 // TODO: write sleep_if_empty
-// static void sleep_if_empty(struct tty_queue *q) {
-//     cli();
-//     while(!current->signal && tty_isempty_q(q))
-//         interruptible_sleep_on(&q->wait_proc); 
-//     sti();
-// }
+void sleep_if_empty(struct tty_queue *q) {
+    cli();
+    while(!current->signal && tty_isempty_q(q))
+        interruptible_sleep_on(&q->wait_proc); 
+    sti();
+}
 
-// static void sleep_if_full(struct tty_queue *q) {
-//     cli();
-//     while(!current->signal && tty_isfull_q(q))
-//         interruptible_sleep_on(&q->wait_proc); 
-//     sti();
-// }
+static void sleep_if_full(struct tty_queue *q) {
+    cli();
+    while(!current->signal && tty_isfull_q(q))
+        interruptible_sleep_on(&q->wait_proc); 
+    sti();
+}
 
 // tty_read 函数从 tty->buffer 中读取内容
 // 当没有读到足够的字符且 buffer 为空的时候
 // sleep
-// nr = -1 means only stop at \n
 int tty_read(int channel, char *buf, int nr) {
     int len = 0;
     char ch;
     char *p = buf;
-    // unsigned int i;
-    // return from the tty_read when recv a \n or EOF
-    // char done = 0;
-    // unsigned int headptr = 0;
-    // Sanity check
+    char tmpbuf[TTY_BUF_SIZE];
+    int tmpbuf_len = 0;
 #ifdef DEBUG
-    s_printk("buf addr = 0x%x\n", buf);
+    s_printk("TTY= %d, buf addr = 0x%x\n", buf);
 #endif
     if (channel > 2 || channel < 0 || nr < 0)
         return -1;
     struct tty_struct *tty = tty_table + channel;
     // Sleep until the queue is not empty
-    // sleep_if_empty(&tty->buffer);
     // Only we get an \n, we start to process
-    interruptible_sleep_on(&tty->buffer.wait_proc);
+    // interruptible_sleep_on(&tty->buffer.wait_proc);
+    //
+    // outer loop for reading lines
+    while (1) {
+        // If the queue is empty and we haven't finish reading
+        // Then we sleep, only enter can wake up the sleep
+        // sleep_if_empty(&tty->buffer);
 
-    while (nr > 0) {
-        ch = tty_pop_q(&tty->buffer);
-        // TODO: Change -1 to EOF
-        if (ch == '\n' || ch == -1) {
-            // \n Or EOF, we are done
-            // done = 1;
-            // Now we can just stop and pop all to buffer
-            break;
+        // If enter triggered, we start to read then back
+        while(1) {
+            ch = tty_pop_q(&tty->buffer);
+#ifdef DEBUG
+            if(tty_isempty_q(&tty->buffer)) {
+                s_printk("Empty!");
+            }
+            tty_queue_stat(&tty->buffer);
+#endif
+            if (nr <= 0) {
+                // get the char then put it back
+                tmpbuf[tmpbuf_len++] = ch;
+                if (ch == '\n' || ch == -1) {
+                    for (int i = tmpbuf_len - 1; i >= 0; i--) {
+                        tty_push_q_front(&tty->buffer, tmpbuf[i]);
+                    }
+                    break;
+                    // revert the queue and stop the cycle
+                }
+                // put the char in tmp queue and continue
+                continue;
+            }
+            // TODO: Change -1 to EOF
+            // We also keep the \n
+            if (ch == '\n' || ch == -1) {
+                // TODO: Figure out why put_fs_byte don't work
+                // put_fs_byte(ch, p++);
+                *p++ = ch;
+                len++;
+                nr--;
+                break;
+            }
+            // put_fs_byte(ch, p++);
+            *p++ = ch;
+            len++;
+            nr--;
         }
-        /* if (ch == CTRL_INT) return -1; */
-        put_fs_byte(ch, p);
-        *p++ = ch;
 #ifdef DEBUG
         s_printk("Buf = %s\n", buf);
 #endif
-        len++;
-        nr--;
+        if (nr <= 0) {
+            break;
+        }
     }
-    // while (!done) {
-    //     sleep_if_empty(&tty->buffer);
-    //     for (i = tty->buffer.head; i != tty->buffer.tail; i = (i + 1) % TTY_BUF_SIZE) {
-    //         if (tty->buffer.buf[i] == '\n' || tty->buffer.buf[i] == -1) {
-    //             done = 1;
-    //             break;
-    //         }
-    //     }
-    // }
+
     return len;
 }

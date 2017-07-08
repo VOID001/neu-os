@@ -19,5 +19,7 @@ int sys_sleep(long seconds) {
     sys_alarm(seconds);
     current->state = TASK_INTERRUPTIBLE;
     schedule();
+    // when sleep wakeup, we clear the alarm
+    current->signal = current->signal & (~(1<<(SIGALRM-1)));
     return 0;
 }

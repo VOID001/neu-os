@@ -31,6 +31,7 @@ char tty_pop_q(struct tty_queue *q);
 char tty_queue_head(const struct tty_queue *q);
 char tty_queue_tail(const struct tty_queue *q);
 int tty_push_q(struct tty_queue *q, char ch);
+int tty_push_q_front(struct tty_queue *q, char ch);
 void tty_queue_stat(const struct tty_queue *q);
 void tty_write(struct tty_struct *tty);
 void copy_to_buffer(struct tty_struct *tty);
