@@ -116,8 +116,11 @@ int tty_read(int channel, char *buf, int nr) {
     char tmpbuf[TTY_BUF_SIZE];
     int tmpbuf_len = 0;
 #ifdef DEBUG
-    s_printk("TTY= %d, buf addr = 0x%x\n", buf);
+    s_printk("[TTY] buf addr = 0x%x\n", buf);
 #endif
+
+    // TODO make channel adjustable
+    channel = 0;
     if (channel > 2 || channel < 0 || nr < 0)
         return -1;
     struct tty_struct *tty = tty_table + channel;
@@ -177,4 +180,17 @@ int tty_read(int channel, char *buf, int nr) {
     }
 
     return len;
+}
+
+int _user_tty_write(int channel, char *buf, int nr) {
+    int i = 0;
+    // TODO make channel adjustable
+    channel = 0;
+    struct tty_struct *tty = tty_table + channel;
+    for (i = 0; i < nr; i++) {
+        tty_push_q(&tty->write_q, buf[i]);
+    }
+    tty_write(tty);
+    // TODO return len
+    return nr;
 }

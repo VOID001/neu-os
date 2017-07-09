@@ -13,6 +13,7 @@ extern int sys_sgetmask(void);
 extern int sys_ssetmask(int newmask);
 // Just for debug use
 extern int tty_read(int channel, char *buf, int nr);
+extern int _user_tty_write(int channel, char *buf, int nr);
 extern int sys_alarm(long seconds);
 extern int sys_sleep(long seconds);
 
@@ -21,7 +22,7 @@ fn_ptr sys_call_table[] = {
     tty_read, // 0
     stub_syscall,
     sys_fork,
-    stub_syscall,
+    _user_tty_write, // 3
     stub_syscall,
     stub_syscall,
     stub_syscall,

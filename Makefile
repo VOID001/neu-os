@@ -12,7 +12,7 @@ LDFLAGS	+= -Ttext 0 -e startup_32 -nostdlib #-lgcc
 
 all: bootimg
 
-OBJS = boot/head.o init/main.o kernel/kernel.o mm/mm.o
+OBJS = boot/head.o init/main.o kernel/kernel.o mm/mm.o lib/lib.o
 DRIVERS = kernel/chr_drv/chr_drv.a
 
 system: $(OBJS) $(DRIVERS)
@@ -37,6 +37,9 @@ boot/setup:
 
 init/main.o:
 	@make main.o -C init
+
+lib/lib.o:
+	@make lib.o -C lib
 
 mm/mm.o:
 	@make -C mm

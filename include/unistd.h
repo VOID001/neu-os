@@ -13,7 +13,9 @@
 #define __NR_sys_debug 72
 
 // Just for debug
+// TODO Change to write, read
 #define __NR_user_tty_read 0
+#define __NR_user_tty_write 3
 
 #define _syscall0(type, name)  \
 type name(void) \
