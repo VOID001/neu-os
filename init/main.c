@@ -92,34 +92,30 @@ void sched_abcd_demo() {
     // Here init process (pid = 1) will
     // print AABB randomly
     char buf[100] = "TTY";
-    sys_debug("====================TTY=======================\n");
-    printf("=====================TTY================\n");
+    printf("Welcome to the OS, your are current at %x\n", sched_abcd_demo);
     // getline(buf);
     // user_tty_read(0, buf, 1);
-    user_tty_write(0, buf, 10);
-    while(1);
+    // user_tty_write(0, buf, 10);
+    printf("This is a multi-thread demo, start in 3s ...");
+    sleep(3);
     if(!fork()) {
         while(1) {
-            sys_debug("A");
-            sleep(1);
+            printf("A");
         }
     }
     if(!fork()) {
         while(1) {
-            sys_debug("B");
-            sleep(2);
+            printf("B");
         }
     }
     if(!fork()) {
         while(1) {
-            sys_debug("C");
-            sleep(3);
+            printf("C");
         }
     }
     if(!fork()) {
         while(1) {
-            sys_debug("D");
-            sleep(4);
+            printf("D");
         }
     }
     while(1);
