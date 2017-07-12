@@ -188,7 +188,8 @@ int _user_tty_write(int channel, char *buf, int nr) {
     channel = 0;
     struct tty_struct *tty = tty_table + channel;
     for (i = 0; i < nr; i++) {
-        tty_push_q(&tty->write_q, buf[i]);
+        char c = get_fs_byte(buf + i);
+        tty_push_q(&tty->write_q, c);
     }
     tty_write(tty);
     // TODO return len
