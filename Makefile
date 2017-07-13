@@ -70,3 +70,4 @@ clean:
 	@make clean -C kernel
 	@make clean -C mm
 	@make clean -C init
+	@make clean -C lib

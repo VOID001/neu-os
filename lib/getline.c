@@ -1,6 +1,7 @@
 #define __LIBRARY__
 #define EOF -1
 #include <unistd.h>
+#include <linux/lib.h>
 extern int user_tty_read(int channel, char *buf, int nr);
 
 
@@ -21,6 +22,6 @@ int getline(char *str) {
         *p++ = ch;
         len++;
     }
-    *p = '\0';
-    return len;
+    *(p - 1) = '\0';
+    return len - 1;     // remove the \n
 }

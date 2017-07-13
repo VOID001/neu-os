@@ -160,14 +160,14 @@ int tty_read(int channel, char *buf, int nr) {
             // We also keep the \n
             if (ch == '\n' || ch == -1) {
                 // TODO: Figure out why put_fs_byte don't work
-                // put_fs_byte(ch, p++);
-                *p++ = ch;
+                put_fs_byte(ch, p++);
+                // *p++ = ch;
                 len++;
                 nr--;
                 break;
             }
-            // put_fs_byte(ch, p++);
-            *p++ = ch;
+            put_fs_byte(ch, p++);
+            // *p++ = ch;
             len++;
             nr--;
         }
