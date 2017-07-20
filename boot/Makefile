@@ -11,15 +11,15 @@ all: bootsect setup head.o
 
 bootsect: bootsect.s
 	@$(AS) -n -g -o bootsect.o bootsect.s
-	@$(LD) $(LDFLAGS) -o bootsect bootsect.o
+	@$(LD) -T ldS.ld -o bootsect bootsect.o
 	@cp -f bootsect bootsect.sym
-	@$(OBJCOPY) -R .pdr -R .comment -R.note -S -O binary bootsect
+	@$(OBJCOPY) -j .text -S -O binary bootsect
 
 setup: setup.s
 	@$(AS) -n -g -o setup.o setup.s
-	@$(LD) $(LDFLAGS) -o setup setup.o
+	@$(LD) -T ldS.ld -o setup setup.o
 	@cp -f setup setup.sym
-	@$(OBJCOPY) -R .pdr -R .comment -R.note -S -O binary setup
+	@$(OBJCOPY) -j .text -S -O binary setup
 
 head.o: head.s
 	@$(AS) -n -g -o head.o head.s
