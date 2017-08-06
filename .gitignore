@@ -1,3 +1,4 @@
 bootsect
 *.o
 Image
+demo
