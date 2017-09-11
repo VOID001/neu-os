@@ -12,17 +12,25 @@ bootsect: bootsect.o ld-bootsect.ld
 	- @ld -T ld-bootsect.ld bootsect.o -o bootsect
 	- @objcopy -O binary -j .text bootsect
 
-Image:	bootsect demo
+Image:	bootsect setup binary
 	- @dd if=bootsect of=Image bs=512 count=1
-	- @dd if=demo of=Image bs=512 count=4 seek=1
+	- @dd if=setup of=Image bs=512 count=4 seek=1
+	- @dd if=binary of=Image bs=512 seek=5
 	- @echo "Image built done"
 
-demo: demo.o
-	- @ld -T ld-bootsect.ld demo.o -o demo
-	- @objcopy -O binary -j .text demo
+setup: setup.o
+	- @ld -T ld-bootsect.ld setup.o -o setup
+	- @objcopy -O binary -j .text setup
 
-demo.o: demo.S
-	- @as --32 demo.S -o demo.o
+binary: binary.o
+	- @ld -T ld-bootsect.ld binary.o -o binary
+	- @objcopy -O binary -j .text binary
+
+setup.o: setup.S
+	- @as --32 setup.S -o setup.o
+
+binary.o: binary.S
+	- @as --32 binary.S -o binary.o
 
 clean:
 	- @rm -f *.o bootsect

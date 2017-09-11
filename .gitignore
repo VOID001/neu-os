@@ -2,3 +2,5 @@ bootsect
 *.o
 Image
 demo
+binary
+setup
