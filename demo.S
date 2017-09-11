@@ -2,7 +2,7 @@
 
 .text
 
-.equ DEMOSEG, 0x1020
+.equ DEMOSEG, 0x9020
 .equ LEN, 54
 
 show_text:
