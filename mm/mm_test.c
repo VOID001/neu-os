@@ -43,7 +43,7 @@ void test_put_page() {
 }
 
 // Helper function to convert linear address to PTE
-// return physical address on success
+// return a pointer to a page table entry on success
 // return NULL(0) on failed
 unsigned long *linear_to_pte(unsigned long addr) {
     // get the Page Directory Entry first
@@ -130,7 +130,7 @@ int mmtest_main(void) {
     mm_read_only(0xdad233);
     x = (unsigned long *)0xdad233;
     // DO not modify this code
-    // Here will disable WP bit (temporarily)
+    // Here will make WP bit enabled (temporarily)
     asm volatile("mov %%cr0, %%eax\n\t"
             "orl $0x00010000, %%eax\n\t"
             "mov %%eax, %%cr0\n\t"

@@ -113,7 +113,7 @@ void free_page(unsigned long addr) {
     addr = MAP_NR(addr);        // 计算出需要的页号
     if(mem_map[addr]--) return;     // 如果该页为被使用状态那么减少引用计数并返回
     mem_map[addr] = 0;
-    panic("Tring to free free page!");  // 不应该出现这种情况 因而引发panic
+    panic("Trying to free free page!");  // 不应该出现这种情况 因而引发panic
 }
 
 // 释放页表, 以及相应对应的物理页释放,并释放该页目录项占用的物理页
