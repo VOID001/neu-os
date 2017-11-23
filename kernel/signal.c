@@ -47,7 +47,7 @@ void do_signal(long signr, long eax, long ebx, long ecx,
         //     sys_debug("Default signal handler");
     }
     // User registered signal handler, then process
-    if ((sa->sa_flags | SA_ONESHOT)) {
+    if ((sa->sa_flags & SA_ONESHOT)) {
         sa->sa_handler = NULL;
     }
     // Make EIP in the stack pointed to handler function
