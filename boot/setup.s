@@ -180,8 +180,7 @@ end_move:
 	lidt idt_48
 	lgdt gdt_48	
 
-
-# 开启A20地址线，使得可以访问64KB以上的内存
+# 开启A20地址线，使得可以访问1M以上的内存
 	inb $0x92, %al
 	orb $0b00000010, %al
 	outb %al, $0x92
